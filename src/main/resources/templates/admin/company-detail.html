@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/admin-layout :: adminHead('Chi tiết nhà xe')}"></head>
+<body class="admin-body">
+<div class="admin-wrapper">
+    <aside th:replace="~{fragments/admin-layout :: sidebar('companies')}"></aside>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/admin-layout :: topbar('Chi tiết nhà xe')}"></div>
+
+        <main class="admin-content">
+            <a th:href="@{/admin/companies}" class="btn btn-light btn-sm mb-3"><i class="bi bi-arrow-left me-1"></i>Danh sách nhà xe</a>
+
+            <!-- Thong tin nha xe -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                        <div>
+                            <h4 class="fw-bold text-primary-dark mb-1" th:text="${company.name}">Nhà xe</h4>
+                            <span class="badge-soft" th:text="${company.statusLabel}"
+                                  th:classappend="${company.status == 'ACTIVE'} ? 'badge-soft-success' : 'badge-soft-secondary'"></span>
+                        </div>
+                        <div class="text-end">
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <strong th:text="${company.ratingAvg}">4.5</strong>
+                            <small class="text-muted" th:text="'(' + ${company.ratingCount} + ' đánh giá)'"></small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row g-3">
+                        <div class="col-md-4"><i class="bi bi-telephone text-primary me-2"></i><span th:text="${company.hotline}"></span></div>
+                        <div class="col-md-4"><i class="bi bi-envelope text-primary me-2"></i><span th:text="${company.email} ?: 'Chưa có email'"></span></div>
+                        <div class="col-md-4"><i class="bi bi-geo-alt text-primary me-2"></i><span th:text="${company.address}"></span></div>
+                        <div class="col-12 text-muted" th:if="${company.description}" th:text="${company.description}"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Danh sach xe -->
+            <div class="card table-card mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-primary-dark"><i class="bi bi-bus-front me-2"></i>Danh sách xe (<span th:text="${#lists.size(buses)}">0</span>)</h5>
+                    <button class="btn btn-accent btn-sm" data-bs-toggle="modal" data-bs-target="#busModal">
+                        <i class="bi bi-plus-lg me-1"></i>Thêm xe</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead><tr><th>Biển số</th><th>Loại xe</th><th class="text-center">Số ghế</th><th class="text-center">Số tầng</th><th>Trạng thái</th><th class="text-end">Thao tác</th></tr></thead>
+                        <tbody>
+                        <tr th:each="b : ${buses}">
+                            <td class="fw-semibold" th:text="${b.licensePlate}">29B-123.45</td>
+                            <td th:text="${b.busTypeLabel}">Giường nằm</td>
+                            <td class="text-center" th:text="${b.totalSeats}">40</td>
+                            <td class="text-center" th:text="${b.floors}">2</td>
+                            <td><span class="badge-soft badge-soft-success" th:text="${b.status}">ACTIVE</span></td>
+                            <td class="text-end">
+                                <button type="button" class="btn btn-sm btn-outline-danger btn-icon" title="Xóa xe"
+                                        data-bs-toggle="modal" data-bs-target="#confirmModal"
+                                        th:data-confirm-action="@{/admin/companies/{cid}/buses/{bid}/delete(cid=${company.id}, bid=${b.id})}"
+                                        data-confirm-title="Xóa xe"
+                                        th:data-confirm-message="'Xóa xe ' + ${b.licensePlate} + ' và toàn bộ sơ đồ ghế?'"
+                                        data-confirm-button="Xóa" data-confirm-class="btn-danger">
+                                    <i class="bi bi-trash"></i></button>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(buses)}"><td colspan="6" class="text-center text-muted py-4">Nhà xe chưa có xe nào.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Danh sach chuyen -->
+            <div class="card table-card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0 fw-bold text-primary-dark"><i class="bi bi-signpost-split me-2"></i>Chuyến xe thuộc nhà xe (<span th:text="${#lists.size(trips)}">0</span>)</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead><tr><th>Mã chuyến</th><th>Tuyến</th><th>Khởi hành</th><th>Xe</th><th class="text-end">Giá vé</th><th class="text-center">Ghế</th><th>Trạng thái</th></tr></thead>
+                        <tbody>
+                        <tr th:each="t : ${trips}">
+                            <td class="fw-semibold" th:text="${t.tripCode}">HN-HP-001</td>
+                            <td th:text="${t.origin} + ' → ' + ${t.destination}">Hà Nội → Hải Phòng</td>
+                            <td th:text="${#temporals.format(t.departureTime, 'dd/MM/yyyy HH:mm')}">01/01/2026 07:00</td>
+                            <td th:text="${t.licensePlate}">29B-123.45</td>
+                            <td class="text-end" th:text="${#numbers.formatDecimal(t.basePrice, 0, 'POINT', 0, 'COMMA')} + 'đ'">120.000đ</td>
+                            <td class="text-center" th:text="${t.bookedSeats} + '/' + ${t.totalSeats}">0/40</td>
+                            <td><span class="badge-soft" th:text="${t.statusLabel}"
+                                      th:classappend="${t.status == 'SCHEDULED'} ? 'badge-soft-primary' :
+                                                      (${t.status == 'RUNNING'} ? 'badge-soft-warning' :
+                                                      (${t.status == 'COMPLETED'} ? 'badge-soft-success' : 'badge-soft-danger'))"></span></td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(trips)}"><td colspan="7" class="text-center text-muted py-4">Chưa có chuyến xe nào.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Modal them xe -->
+<div class="modal fade" id="busModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" method="post" th:action="@{/admin/companies/{id}/buses(id=${company.id})}">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm xe mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Biển số xe *</label>
+                    <input type="text" name="licensePlate" class="form-control" required maxlength="20" placeholder="29B-123.45">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Loại xe *</label>
+                    <select name="busType" class="form-select" required>
+                        <option th:each="t : ${busTypes}" th:value="${t}" th:text="${t.label}"></option>
+                    </select>
+                </div>
+                <div class="row g-3">
+                    <div class="col-7">
+                        <label class="form-label">Tổng số ghế *</label>
+                        <input type="number" name="totalSeats" class="form-control" required min="4" max="60" value="40">
+                    </div>
+                    <div class="col-5">
+                        <label class="form-label">Số tầng *</label>
+                        <select name="floors" class="form-select"><option value="2" selected>2 tầng</option><option value="1">1 tầng</option></select>
+                    </div>
+                </div>
+                <div class="form-text mt-3"><i class="bi bi-info-circle"></i>
+                    Hệ thống tự tạo sơ đồ ghế: tầng 1 mã A01…, tầng 2 mã B01…; 4 ghế đầu mỗi tầng là ghế VIP.</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
+                <button type="submit" class="btn btn-primary-brand"><i class="bi bi-check2 me-1"></i>Thêm xe</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div th:replace="~{fragments/admin-layout :: confirmModal}"></div>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+<th:block th:replace="~{fragments/admin-layout :: adminScripts}"></th:block>
+</body>
+</html>

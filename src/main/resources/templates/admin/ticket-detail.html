@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/admin-layout :: adminHead('Chi tiết vé ' + ${ticket.ticketCode})}"></head>
+<body class="admin-body">
+<div class="admin-wrapper">
+    <aside th:replace="~{fragments/admin-layout :: sidebar('tickets')}"></aside>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/admin-layout :: topbar('Chi tiết Vé xe: ' + ${ticket.ticketCode})}"></div>
+
+        <main class="admin-content">
+            <div class="mb-3">
+                <a th:href="@{/admin/tickets}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i>Danh sách vé
+                </a>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    <div class="card p-4 shadow-sm mb-4">
+                        <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-3">
+                            <div>
+                                <div class="small text-muted">Mã vé xe</div>
+                                <h3 class="fw-bold text-accent font-monospace mb-0" th:text="${ticket.ticketCode}">BG123456</h3>
+                            </div>
+                            <span class="badge-soft fs-6" th:text="${ticket.status.label}"
+                                  th:classappend="${ticket.status.name() == 'PAID'} ? 'badge-soft-success' :
+                                                  (${ticket.status.name() == 'PENDING'} ? 'badge-soft-warning' :
+                                                  (${ticket.status.name() == 'COMPLETED'} ? 'badge-soft-primary' : 'badge-soft-danger'))">
+                            </span>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <div class="small text-muted">Hành khách:</div>
+                                <strong class="fs-6" th:text="${ticket.passengerName}"></strong>
+                                <div class="small text-muted">SĐT: <span th:text="${ticket.passengerPhone}"></span></div>
+                                <div class="small text-muted">Email: <span th:text="${ticket.passengerEmail ?: 'Không có'}"></span></div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="small text-muted">Tài khoản đặt:</div>
+                                <strong th:text="${ticket.user.fullName}"></strong>
+                                <div class="small text-muted">Username: @<span th:text="${ticket.user.username}"></span></div>
+                                <div class="small text-muted">Hạng: <span class="badge bg-light text-dark border" th:text="${ticket.user.membershipType.label}"></span></div>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-light rounded-3 mb-4">
+                            <h6 class="fw-bold text-primary-dark mb-2"><i class="bi bi-signpost-2 me-1"></i>Hành trình chuyến xe</h6>
+                            <div class="row g-2 small">
+                                <div class="col-md-6">Tuyến: <strong><span th:text="${trip.origin}"></span> → <span th:text="${trip.destination}"></span></strong></div>
+                                <div class="col-md-6">Nhà xe: <strong th:text="${trip.bus.company.name}"></strong> (<span th:text="${trip.bus.licensePlate}"></span>)</div>
+                                <div class="col-md-6">Khởi hành: <strong class="text-primary" th:text="${#temporals.format(trip.departureTime, 'HH:mm - dd/MM/yyyy')}"></strong></div>
+                                <div class="col-md-6">Bến đón: <span th:text="${trip.pickupPoint ?: trip.origin}"></span></div>
+                            </div>
+                        </div>
+
+                        <h6 class="fw-bold text-primary-dark mb-2">Danh sách ghế đặt</h6>
+                        <div class="d-flex flex-wrap gap-2 mb-4">
+                            <span th:each="d : ${ticket.details}" class="badge bg-primary fs-6 py-2 px-3">
+                                Ghế <strong th:text="${d.seatCode}">A01</strong> (<span th:text="${d.seatType.label}"></span> - <span th:text="${#numbers.formatDecimal(d.price.add(d.surcharge), 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>)
+                            </span>
+                        </div>
+
+                        <div th:if="${ticket.status.name() == 'CANCELLED'}" class="alert alert-danger">
+                            <h6><i class="bi bi-exclamation-octagon me-1"></i>Vé đã bị hủy</h6>
+                            <div>Lý do: <span th:text="${ticket.cancelReason}"></span></div>
+                            <div class="small text-muted">Thời gian: <span th:text="${#temporals.format(ticket.cancelledAt, 'HH:mm dd/MM/yyyy')}"></span></div>
+                        </div>
+
+                        <!-- Thao tac Admin -->
+                        <div class="pt-3 border-top d-flex gap-2">
+                            <button th:if="${ticket.status.name() == 'PENDING'}" type="button" class="btn btn-success btn-sm"
+                                    data-bs-toggle="modal" data-bs-target="#confirmModal"
+                                    th:data-confirm-action="@{/admin/tickets/{id}/confirm-payment(id=${ticket.id})}"
+                                    data-confirm-title="Xác nhận thanh toán"
+                                    th:data-confirm-message="'Xác nhận đã nhận tiền cho vé ' + ${ticket.ticketCode} + '?'"
+                                    data-confirm-button="Xác nhận" data-confirm-class="btn-success">
+                                <i class="bi bi-check-lg me-1"></i>Xác nhận đã thanh toán
+                            </button>
+
+                            <button th:if="${ticket.status.name() == 'PAID' or ticket.status.name() == 'PENDING'}" type="button" class="btn btn-outline-danger btn-sm"
+                                    data-bs-toggle="modal" data-bs-target="#confirmModal"
+                                    th:data-confirm-action="@{/admin/tickets/{id}/cancel(id=${ticket.id})}"
+                                    data-confirm-title="Hủy vé xe"
+                                    th:data-confirm-message="'Hủy vé ' + ${ticket.ticketCode} + '? Ghế sẽ được giải phóng ngay lập tức.'"
+                                    data-confirm-button="Hủy vé" data-confirm-class="btn-danger">
+                                <i class="bi bi-slash-circle me-1"></i>Hủy vé
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card p-3 shadow-sm text-center mb-3">
+                        <h6 class="fw-bold text-primary-dark mb-2">Mã QR tra cứu</h6>
+                        <img th:src="'data:image/png;base64,' + ${qrCode}" alt="QR code" class="img-fluid rounded border p-2 bg-white" style="max-width: 170px;">
+                    </div>
+
+                    <div class="card p-3 shadow-sm">
+                        <h6 class="fw-bold text-primary-dark mb-2 pb-2 border-bottom">Chi tiết tiền</h6>
+                        <div class="small">
+                            <div class="d-flex justify-content-between py-1"><span>Tạm tính:</span><strong th:text="${#numbers.formatDecimal(ticket.subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></strong></div>
+                            <div class="d-flex justify-content-between py-1" th:if="${ticket.vipSurchargeTotal > 0}"><span>Phụ phí VIP:</span><strong class="text-warning" th:text="'+' + ${#numbers.formatDecimal(ticket.vipSurchargeTotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></strong></div>
+                            <div class="d-flex justify-content-between py-1" th:if="${ticket.memberDiscount > 0}"><span>Giảm giá thành viên:</span><strong class="text-success" th:text="'-' + ${#numbers.formatDecimal(ticket.memberDiscount, 0, 'POINT', 0, 'COMMA')} + 'đ'"></strong></div>
+                            <div class="d-flex justify-content-between py-1" th:if="${ticket.promoDiscount > 0}"><span>Mã khuyến mãi:</span><strong class="text-success" th:text="'-' + ${#numbers.formatDecimal(ticket.promoDiscount, 0, 'POINT', 0, 'COMMA')} + 'đ'"></strong></div>
+                            <div class="d-flex justify-content-between py-2 border-top mt-1"><span class="fw-bold">Tổng thanh toán:</span><strong class="fs-5 text-accent" th:text="${#numbers.formatDecimal(ticket.totalAmount, 0, 'POINT', 0, 'COMMA')} + 'đ'"></strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<div th:replace="~{fragments/admin-layout :: confirmModal}"></div>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+<th:block th:replace="~{fragments/admin-layout :: adminScripts}"></th:block>
+</body>
+</html>

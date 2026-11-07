@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/admin-layout :: adminHead('Báo cáo doanh thu')}"></head>
+<body class="admin-body">
+<div class="admin-wrapper">
+    <aside th:replace="~{fragments/admin-layout :: sidebar('reports')}"></aside>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/admin-layout :: topbar('Báo cáo Doanh thu & Thống kê')}"></div>
+
+        <main class="admin-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h5 class="fw-bold text-primary-dark mb-1">Báo cáo Doanh thu Hệ thống</h5>
+                    <p class="text-muted small mb-0">Thống kê chi tiết doanh thu theo tháng, theo tuyến và tỷ lệ lấp đầy</p>
+                </div>
+                <a th:href="@{/admin/reports/export-excel}" class="btn btn-success btn-sm px-3 shadow-sm">
+                    <i class="bi bi-file-earmark-excel-fill me-1"></i>Xuất báo cáo Excel
+                </a>
+            </div>
+
+            <!-- Bang 1: Doanh thu theo thang -->
+            <div class="card table-card mb-4">
+                <div class="card-header bg-white py-3">
+                    <h6 class="mb-0 fw-bold text-primary-dark"><i class="bi bi-calendar-check me-2"></i>Doanh thu 6 tháng gần nhất</h6>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead><tr><th>Thời gian</th><th class="text-end">Doanh thu thực tế (VNĐ)</th><th>Tỷ trọng</th></tr></thead>
+                        <tbody>
+                        <tr th:each="i : ${#numbers.sequence(0, #lists.size(stats.monthlyRevenueLabels) - 1)}">
+                            <td class="fw-semibold" th:text="${stats.monthlyRevenueLabels[i]}">Tháng 01/2026</td>
+                            <td class="text-end fw-bold text-accent"
+                                th:text="${#numbers.formatDecimal(stats.monthlyRevenueData[i], 0, 'POINT', 0, 'COMMA')} + 'đ'">0đ</td>
+                            <td>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-primary"
+                                         th:style="'width: ' + (${stats.totalRevenue > 0 ? stats.monthlyRevenueData[i].multiply(100).divide(stats.totalRevenue, 0, T(java.math.RoundingMode).HALF_UP) : 0}) + '%;'"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Bang 2: Doanh thu theo tuyen -->
+            <div class="card table-card">
+                <div class="card-header bg-white py-3">
+                    <h6 class="mb-0 fw-bold text-primary-dark"><i class="bi bi-signpost-split me-2"></i>Doanh thu theo các tuyến xe</h6>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead><tr><th>Tuyến đường</th><th class="text-end">Tổng doanh thu</th></tr></thead>
+                        <tbody>
+                        <tr th:each="i : ${#numbers.sequence(0, #lists.size(stats.routeRevenueLabels) - 1)}"
+                            th:if="${not #lists.isEmpty(stats.routeRevenueLabels)}">
+                            <td class="fw-semibold" th:text="${stats.routeRevenueLabels[i]}">Hà Nội - Hải Phòng</td>
+                            <td class="text-end fw-bold text-success"
+                                th:text="${#numbers.formatDecimal(stats.routeRevenueData[i], 0, 'POINT', 0, 'COMMA')} + 'đ'">0đ</td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(stats.routeRevenueLabels)}">
+                            <td colspan="2" class="text-center text-muted py-4">Chưa có dữ liệu giao dịch vé.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<div th:replace="~{fragments/layout :: toasts}"></div>
+<th:block th:replace="~{fragments/admin-layout :: adminScripts}"></th:block>
+</body>
+</html>

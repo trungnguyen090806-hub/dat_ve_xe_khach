@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Đăng nhập')}"></head>
+<body class="bg-page">
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main class="container auth-wrapper">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-5">
+            <div class="card auth-card">
+                <div class="card-body p-4 p-md-5">
+                    <div class="text-center mb-4">
+                        <div class="auth-icon"><i class="bi bi-person-lock"></i></div>
+                        <h3 class="fw-bold text-primary-dark mb-1">Đăng nhập</h3>
+                        <p class="text-muted mb-0">Chào mừng bạn quay lại BusGo</p>
+                    </div>
+
+                    <div class="alert alert-danger" th:if="${param.error}">
+                        <i class="bi bi-exclamation-triangle me-1"></i>Tài khoản hoặc mật khẩu không đúng.</div>
+                    <div class="alert alert-warning" th:if="${param.disabled}">
+                        <i class="bi bi-lock me-1"></i>Tài khoản đã bị khóa. Vui lòng liên hệ hotline.</div>
+                    <div class="alert alert-success" th:if="${param.logout}">
+                        <i class="bi bi-check-circle me-1"></i>Bạn đã đăng xuất.</div>
+
+                    <form th:action="@{/login}" method="post" novalidate>
+                        <div class="mb-3">
+                            <label class="form-label" for="username">Email hoặc tên đăng nhập</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                <input type="text" id="username" name="username" class="form-control"
+                                       placeholder="admin@busgo.vn" required autofocus>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="password">Mật khẩu</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-key"></i></span>
+                                <input type="password" id="password" name="password" class="form-control"
+                                       placeholder="••••••" required>
+                                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="password">
+                                    <i class="bi bi-eye"></i></button>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="remember-me" id="rememberMe">
+                                <label class="form-check-label" for="rememberMe">Ghi nhớ đăng nhập</label>
+                            </div>
+                            <a th:href="@{/forgot-password}" class="small">Quên mật khẩu?</a>
+                        </div>
+                        <button type="submit" class="btn btn-primary-brand w-100 py-2">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập</button>
+                    </form>
+
+                    <p class="text-center mt-4 mb-0">Chưa có tài khoản?
+                        <a th:href="@{/register}" class="fw-semibold">Đăng ký ngay</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

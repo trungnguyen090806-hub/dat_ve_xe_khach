@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Kết quả tìm chuyến xe')}"></head>
+<body class="bg-page">
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<!-- ========== THANH TIM KIEM NHANH TREN DAU TRANG ========== -->
+<div class="bg-primary-dark py-3 shadow-sm">
+    <div class="container">
+        <form th:action="@{/search}" method="get" class="row g-2 align-items-center">
+            <div class="col-md-3">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="bi bi-geo-alt-fill text-primary"></i></span>
+                    <input type="text" name="origin" class="form-control" placeholder="Điểm đi"
+                           th:value="${searchReq.origin}" list="quickOriginList" autocomplete="off">
+                    <datalist id="quickOriginList">
+                        <option th:each="o : ${origins}" th:value="${o}"></option>
+                    </datalist>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="bi bi-geo-fill text-accent"></i></span>
+                    <input type="text" name="destination" class="form-control" placeholder="Điểm đến"
+                           th:value="${searchReq.destination}" list="quickDestList" autocomplete="off">
+                    <datalist id="quickDestList">
+                        <option th:each="d : ${destinations}" th:value="${d}"></option>
+                    </datalist>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+                    <input type="date" name="departureDate" class="form-control"
+                           th:value="${searchReq.departureDate}" th:min="${today}">
+                </div>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-accent btn-sm px-3 flex-grow-1">
+                    <i class="bi bi-search me-1"></i>Tìm lại
+                </button>
+                <a th:href="@{/search}" class="btn btn-outline-light btn-sm" title="Xem tất cả">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ========== MAIN CONTENT: FILTER + LIST ========== -->
+<main class="container py-4">
+    <div class="row g-4">
+
+        <!-- ================= COT TRAI: BO LOC ================= -->
+        <aside class="col-lg-3">
+            <div class="card filter-card p-3 shadow-sm">
+                <div class="d-flex justify-content-between align-items-center pb-2 mb-3 border-bottom">
+                    <h6 class="fw-bold text-primary-dark mb-0">
+                        <i class="bi bi-funnel-fill text-primary me-1"></i>Bộ lọc tìm kiếm
+                    </h6>
+                    <a th:href="@{/search(origin=${searchReq.origin}, destination=${searchReq.destination}, departureDate=${searchReq.departureDate})}"
+                       class="small text-danger text-decoration-none">
+                        <i class="bi bi-x-circle me-1"></i>Xóa lọc
+                    </a>
+                </div>
+
+                <form th:action="@{/search}" method="get" id="filterForm">
+                    <!-- Giu lai cac thong tin search co ban -->
+                    <input type="hidden" name="origin" th:value="${searchReq.origin}">
+                    <input type="hidden" name="destination" th:value="${searchReq.destination}">
+                    <input type="hidden" name="departureDate" th:value="${searchReq.departureDate}">
+                    <input type="hidden" name="passengers" th:value="${searchReq.passengers}">
+                    <input type="hidden" name="timeRange" id="timeRangeHidden" th:value="${searchReq.timeRange}">
+                    <input type="hidden" name="sortBy" id="sortByHidden" th:value="${searchReq.sortBy}">
+
+                    <!-- 1. Khung gio khoi hanh -->
+                    <div class="mb-4">
+                        <div class="filter-section-title">Khung giờ đi</div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <button type="button" class="time-btn-pill time-filter-btn" data-range="EARLY_MORNING"
+                                        th:classappend="${searchReq.timeRange == 'EARLY_MORNING'} ? 'active'">
+                                    Sớm (00-06h)
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="time-btn-pill time-filter-btn" data-range="MORNING"
+                                        th:classappend="${searchReq.timeRange == 'MORNING'} ? 'active'">
+                                    Sáng (06-12h)
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="time-btn-pill time-filter-btn" data-range="AFTERNOON"
+                                        th:classappend="${searchReq.timeRange == 'AFTERNOON'} ? 'active'">
+                                    Chiều (12-18h)
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="time-btn-pill time-filter-btn" data-range="EVENING"
+                                        th:classappend="${searchReq.timeRange == 'EVENING'} ? 'active'">
+                                    Tối (18-24h)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Khoang gia ve -->
+                    <div class="mb-4">
+                        <div class="filter-section-title">Khoảng giá vé (VNĐ)</div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <input type="number" name="minPrice" class="form-control form-control-sm"
+                                       placeholder="Từ" min="0" step="10000" th:value="${searchReq.minPrice}">
+                            </div>
+                            <div class="col-6">
+                                <input type="number" name="maxPrice" class="form-control form-control-sm"
+                                       placeholder="Đến" min="0" step="10000" th:value="${searchReq.maxPrice}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Loai xe -->
+                    <div class="mb-4">
+                        <div class="filter-section-title">Loại xe</div>
+                        <div class="form-check mb-1">
+                            <input class="form-check-input" type="radio" name="busType" id="type_all" value=""
+                                   th:checked="${searchReq.busType == null}">
+                            <label class="form-check-label small" for="type_all">Tất cả loại xe</label>
+                        </div>
+                        <div class="form-check mb-1" th:each="bt : ${busTypes}">
+                            <input class="form-check-input" type="radio" name="busType" th:id="'type_' + ${bt}"
+                                   th:value="${bt}" th:checked="${searchReq.busType == bt}">
+                            <label class="form-check-label small" th:for="'type_' + ${bt}" th:text="${bt.label}">Giường nằm</label>
+                        </div>
+                    </div>
+
+                    <!-- 4. Nha xe -->
+                    <div class="mb-4">
+                        <div class="filter-section-title">Nhà xe</div>
+                        <select name="companyId" class="form-select form-select-sm">
+                            <option value="">-- Tất cả nhà xe --</option>
+                            <option th:each="c : ${companies}" th:value="${c.id}" th:text="${c.name}"
+                                    th:selected="${searchReq.companyId == c.id}">Hoàng Long</option>
+                        </select>
+                    </div>
+
+                    <!-- Nut ap dung -->
+                    <button type="submit" class="btn btn-primary-brand w-100 btn-sm py-2">
+                        <i class="bi bi-funnel me-1"></i>Áp dụng bộ lọc
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <!-- ================= COT PHAI: DANH SACH KET QUA ================= -->
+        <section class="col-lg-9">
+
+            <!-- Header thong tin ket qua & Thanh sap xep -->
+            <div class="card p-3 mb-3 shadow-sm">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div>
+                        <h5 class="fw-bold text-primary-dark mb-1">
+                            <span th:if="${searchReq.origin != null and !searchReq.origin.isBlank()}"
+                                  th:text="${searchReq.origin}">Hà Nội</span>
+                            <span th:if="${searchReq.destination != null and !searchReq.destination.isBlank()}">
+                                <i class="bi bi-arrow-right text-accent mx-1"></i>
+                                <span th:text="${searchReq.destination}">Hải Phòng</span>
+                            </span>
+                            <span th:if="${(searchReq.origin == null or searchReq.origin.isBlank()) and (searchReq.destination == null or searchReq.destination.isBlank())}">
+                                Tất cả chuyến xe đang mở bán
+                            </span>
+                        </h5>
+                        <p class="text-muted small mb-0">
+                            Tìm thấy <strong class="text-primary" th:text="${page.totalElements}">0</strong> chuyến xe phù hợp
+                            <span th:if="${searchReq.departureDate != null}">
+                                · Ngày khởi hành: <strong th:text="${#temporals.format(searchReq.departureDate, 'dd/MM/yyyy')}"></strong>
+                            </span>
+                        </p>
+                    </div>
+
+                    <!-- Sap xep -->
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="small fw-semibold text-muted text-nowrap"><i class="bi bi-sort-down me-1"></i>Sắp xếp:</span>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn sort-tab-btn" data-sort="time_asc"
+                                    th:classappend="${searchReq.sortBy == 'time_asc' or searchReq.sortBy == null} ? 'btn-primary-brand' : 'btn-outline-secondary'">
+                                Giờ sớm nhất
+                            </button>
+                            <button type="button" class="btn sort-tab-btn" data-sort="price_asc"
+                                    th:classappend="${searchReq.sortBy == 'price_asc'} ? 'btn-primary-brand' : 'btn-outline-secondary'">
+                                Giá thấp - cao
+                            </button>
+                            <button type="button" class="btn sort-tab-btn" data-sort="price_desc"
+                                    th:classappend="${searchReq.sortBy == 'price_desc'} ? 'btn-primary-brand' : 'btn-outline-secondary'">
+                                Giá cao - thấp
+                            </button>
+                            <button type="button" class="btn sort-tab-btn" data-sort="rating_desc"
+                                    th:classappend="${searchReq.sortBy == 'rating_desc'} ? 'btn-primary-brand' : 'btn-outline-secondary'">
+                                Đánh giá
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Danh sach Card chuyen xe -->
+            <div th:each="t : ${page.content}" class="trip-item-card">
+                <div class="row g-3 align-items-center">
+
+                    <!-- Thong tin nha xe & loai xe -->
+                    <div class="col-12 border-bottom pb-2 mb-2 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fw-bold text-primary-dark fs-6" th:text="${t.companyName}">Nhà xe</span>
+                            <div class="badge-soft badge-soft-warning py-1 px-2">
+                                <i class="bi bi-star-fill text-warning"></i>
+                                <span th:text="${t.companyRatingAvg}">4.6</span>
+                                <span class="text-muted" th:text="'(' + ${t.companyRatingCount} + ')'"></span>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="badge-soft badge-soft-primary" th:text="${t.busTypeLabel}">Giường nằm</span>
+                            <span class="badge-soft badge-soft-secondary" th:text="${t.licensePlate}">29B-123.45</span>
+                        </div>
+                    </div>
+
+                    <!-- Thoi gian, tuyen & thoi luong -->
+                    <div class="col-md-7">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <!-- Gio di -->
+                            <div>
+                                <div class="trip-time" th:text="${#temporals.format(t.departureTime, 'HH:mm')}">07:00</div>
+                                <div class="trip-station" th:text="${t.pickupPoint ?: t.origin}">Bến xe Gia Lâm</div>
+                                <div class="small text-muted" th:text="${#temporals.format(t.departureTime, 'dd/MM/yyyy')}">01/01/2026</div>
+                            </div>
+
+                            <!-- Duration line -->
+                            <div class="trip-duration-line flex-grow-1 mx-3">
+                                <small class="text-muted fw-semibold" th:text="${t.durationText}">2h30</small>
+                                <div class="duration-bar"></div>
+                                <small class="text-muted" style="font-size:0.75rem;">Chạy thẳng</small>
+                            </div>
+
+                            <!-- Gio den -->
+                            <div class="text-end">
+                                <div class="trip-time" th:text="${#temporals.format(t.arrivalTime, 'HH:mm')}">09:30</div>
+                                <div class="trip-station" th:text="${t.dropoffPoint ?: t.destination}">Bến xe Niệm Nghĩa</div>
+                                <div class="small text-muted" th:text="${#temporals.format(t.arrivalTime, 'dd/MM/yyyy')}">01/01/2026</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gia ve & Nut Chon chuyen -->
+                    <div class="col-md-5 border-start-md ps-md-4 text-md-end">
+                        <div class="trip-price-val" th:text="${#numbers.formatDecimal(t.basePrice, 0, 'POINT', 0, 'COMMA')} + 'đ'">
+                            120.000đ
+                        </div>
+                        <div class="small text-muted mb-2" th:if="${t.vipSurcharge > 0}">
+                            <i class="bi bi-gem text-warning me-1"></i>Ghế VIP phụ phí +<span th:text="${#numbers.formatDecimal(t.vipSurcharge, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                        </div>
+                        <div class="mb-3">
+                            <span class="badge-soft badge-soft-success">
+                                <i class="bi bi-check-circle-fill"></i> Còn <strong th:text="${t.availableSeats}">38</strong> chỗ trống
+                            </span>
+                        </div>
+                        <a th:href="@{/trips/{id}/seats(id=${t.id})}" class="btn btn-accent px-4 py-2 w-100 w-md-auto">
+                            <i class="bi bi-ticket-perforated-fill me-1"></i>Chọn chuyến
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State: Khong tim thay chuyen nao -->
+            <div th:if="${page.empty}" class="card p-5 text-center shadow-sm">
+                <div class="mb-3 text-muted display-1">
+                    <i class="bi bi-bus-front"></i>
+                </div>
+                <h4 class="fw-bold text-primary-dark mb-2">Không tìm thấy chuyến xe phù hợp</h4>
+                <p class="text-muted mb-4">
+                    Rất tiếc, hiện chưa có chuyến xe nào khớp với điều kiện tìm kiếm của bạn. Hãy thử thay đổi ngày khởi hành hoặc điều chỉnh các tiêu chí bộ lọc.
+                </p>
+                <div class="d-flex justify-content-center gap-2">
+                    <a th:href="@{/search}" class="btn btn-primary-brand">
+                        <i class="bi bi-arrow-repeat me-1"></i>Xem tất cả chuyến xe
+                    </a>
+                    <a th:href="@{/}" class="btn btn-light">
+                        <i class="bi bi-house me-1"></i>Về trang chủ
+                    </a>
+                </div>
+            </div>
+
+            <!-- Phân trang kết quả -->
+            <nav th:if="${page.totalPages > 1}" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item" th:classappend="${page.first} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/search(page=${page.number - 1}, origin=${searchReq.origin}, destination=${searchReq.destination}, departureDate=${searchReq.departureDate}, minPrice=${searchReq.minPrice}, maxPrice=${searchReq.maxPrice}, busType=${searchReq.busType}, companyId=${searchReq.companyId}, timeRange=${searchReq.timeRange}, sortBy=${searchReq.sortBy})}">
+                            &laquo; Trước
+                        </a>
+                    </li>
+                    <li class="page-item" th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+                        th:classappend="${i == page.number} ? 'active'">
+                        <a class="page-link"
+                           th:href="@{/search(page=${i}, origin=${searchReq.origin}, destination=${searchReq.destination}, departureDate=${searchReq.departureDate}, minPrice=${searchReq.minPrice}, maxPrice=${searchReq.maxPrice}, busType=${searchReq.busType}, companyId=${searchReq.companyId}, timeRange=${searchReq.timeRange}, sortBy=${searchReq.sortBy})}"
+                           th:text="${i + 1}">1</a>
+                    </li>
+                    <li class="page-item" th:classappend="${page.last} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/search(page=${page.number + 1}, origin=${searchReq.origin}, destination=${searchReq.destination}, departureDate=${searchReq.departureDate}, minPrice=${searchReq.minPrice}, maxPrice=${searchReq.maxPrice}, busType=${searchReq.busType}, companyId=${searchReq.companyId}, timeRange=${searchReq.timeRange}, sortBy=${searchReq.sortBy})}">
+                            Sau &raquo;
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+        </section>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

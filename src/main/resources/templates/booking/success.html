@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Đặt vé thành công - ' + ${ticket.ticketCode})}"></head>
+<body class="bg-page">
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <!-- Card thanh cong -->
+            <div class="card p-4 p-md-5 text-center shadow-lg mb-4 printable-ticket">
+
+                <!-- Icon chuc mung -->
+                <div class="mb-3">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success text-white"
+                         style="width: 80px; height: 80px; font-size: 2.5rem;">
+                        <i class="bi bi-check-lg"></i>
+                    </div>
+                </div>
+
+                <h3 class="fw-bold text-primary-dark mb-1">Đặt vé xe thành công!</h3>
+                <p class="text-muted mb-4">
+                    Cảm ơn quý khách. Thông tin vé và lịch trình đã được lưu vào hệ thống của BusGo.
+                </p>
+
+                <!-- Box ma ve & QR code -->
+                <div class="row g-4 align-items-center justify-content-center p-4 bg-light rounded-4 mb-4 text-md-start">
+                    <div class="col-md-7">
+                        <div class="small text-muted text-uppercase fw-semibold mb-1">Mã tra cứu vé xe</div>
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <span class="fs-2 fw-bold text-accent font-monospace" id="ticketCodeText" th:text="${ticket.ticketCode}">BG12345678</span>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btnCopyTicketCode" title="Sao chép mã">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                        <div class="small mb-1">
+                            <i class="bi bi-shield-check text-success me-1"></i>Trạng thái vé:
+                            <span class="badge bg-success" th:text="${ticket.status.label}">Đã thanh toán</span>
+                        </div>
+                        <div class="small text-muted">
+                            <i class="bi bi-clock-history me-1"></i>Thời gian đặt:
+                            <span th:text="${#temporals.format(ticket.createdAt, 'HH:mm - dd/MM/yyyy')}"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-5 text-center">
+                        <img th:src="'data:image/png;base64,' + ${qrCode}" alt="QR Tra cứu vé"
+                             class="img-fluid rounded border p-2 bg-white shadow-sm" style="max-width: 160px;">
+                        <div class="small text-muted mt-1">Mã QR lên xe</div>
+                    </div>
+                </div>
+
+                <!-- Thong tin chi tiet hanh trinh -->
+                <div class="text-start mb-4">
+                    <h5 class="fw-bold text-primary-dark mb-3 pb-2 border-bottom">
+                        <i class="bi bi-signpost-2 text-primary me-2"></i>Chi tiết chuyến đi
+                    </h5>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="small text-muted">Nhà xe vận hành:</div>
+                            <strong class="fs-6 text-primary-dark" th:text="${trip.bus.company.name}">Hoàng Long</strong>
+                            <div class="small text-muted" th:text="${trip.bus.busType.label} + ' (' + ${trip.bus.licensePlate} + ')'"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="small text-muted">Khởi hành lúc:</div>
+                            <strong class="fs-6 text-primary" th:text="${#temporals.format(trip.departureTime, 'HH:mm - dd/MM/yyyy')}"></strong>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="small text-muted">Điểm đón khách:</div>
+                            <strong th:text="${trip.pickupPoint ?: trip.origin}">Bến xe Gia Lâm</strong>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="small text-muted">Điểm trả khách:</div>
+                            <strong th:text="${trip.dropoffPoint ?: trip.destination}">Bến xe Niệm Nghĩa</strong>
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold text-primary-dark mt-4 mb-3 pb-2 border-bottom">
+                        <i class="bi bi-person-badge text-primary me-2"></i>Thông tin hành khách &amp; Chỗ ngồi
+                    </h5>
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="small text-muted">Hành khách:</div>
+                            <strong th:text="${ticket.passengerName}">Nguyễn Văn A</strong>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="small text-muted">Số điện thoại:</div>
+                            <strong th:text="${ticket.passengerPhone}">0912345678</strong>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="small text-muted">Danh sách ghế:</div>
+                            <div class="d-flex flex-wrap gap-1 mt-1">
+                                <span th:each="d : ${ticket.details}" class="badge bg-primary fs-6 px-2 py-1"
+                                      th:text="${d.seatCode} + (${d.seatType.name() == 'VIP'} ? ' (VIP)' : '')">A01</span>
+                            </div>
+                        </div>
+
+                        <div class="col-12 border-top pt-3 mt-3 d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="small text-muted">Tổng tiền đã thanh toán:</div>
+                                <span class="fs-4 fw-bold text-accent" th:text="${#numbers.formatDecimal(ticket.totalAmount, 0, 'POINT', 0, 'COMMA')} + 'đ'">120.000đ</span>
+                            </div>
+                            <div class="text-end small text-muted">
+                                <div>Môi trường DEMO (Thanh toán giả lập)</div>
+                                <span class="badge-soft badge-soft-success">Thanh toán hoàn tất</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cac nut thao tac -->
+                <div class="d-flex flex-wrap justify-content-center gap-3 pt-3 border-top no-print">
+                    <button type="button" class="btn btn-outline-primary" onclick="window.print()">
+                        <i class="bi bi-printer me-1"></i>In vé xe
+                    </button>
+                    <a th:href="@{/my-tickets}" class="btn btn-primary-brand">
+                        <i class="bi bi-ticket-perforated me-1"></i>Quản lý vé của tôi
+                    </a>
+                    <a th:href="@{/}" class="btn btn-light">
+                        <i class="bi bi-house me-1"></i>Về trang chủ
+                    </a>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+
+<script>
+    document.getElementById('btnCopyTicketCode')?.addEventListener('click', () => {
+        const code = document.getElementById('ticketCodeText').textContent;
+        navigator.clipboard.writeText(code).then(() => {
+            showToast('success', 'Đã sao chép mã vé: ' + code);
+        });
+    });
+</script>
+</body>
+</html>

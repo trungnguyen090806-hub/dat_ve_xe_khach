@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/admin-layout :: adminHead('Dashboard Quản trị')}"></head>
+<body class="admin-body">
+<div class="admin-wrapper">
+    <aside th:replace="~{fragments/admin-layout :: sidebar('dashboard')}"></aside>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/admin-layout :: topbar('Bảng điều khiển Quản trị (Dashboard)')}"></div>
+
+        <main class="admin-content">
+
+            <!-- Thanh cong cu xuat bao cao -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h5 class="fw-bold text-primary-dark mb-1">Tổng quan hoạt động hệ thống</h5>
+                    <p class="text-muted small mb-0">Số liệu thống kê thời gian thực từ các giao dịch thanh toán và đặt vé</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a th:href="@{/admin/reports/export-excel}" class="btn btn-success btn-sm px-3 shadow-sm">
+                        <i class="bi bi-file-earmark-excel-fill me-1"></i>Xuất báo cáo Excel
+                    </a>
+                    <a th:href="@{/admin/reports}" class="btn btn-primary-brand btn-sm px-3 shadow-sm">
+                        <i class="bi bi-graph-up me-1"></i>Chi tiết báo cáo
+                    </a>
+                </div>
+            </div>
+
+            <!-- 5 THE THONG KE (KPIs) -->
+            <div class="row g-3 mb-4">
+                <!-- Tong doanh thu -->
+                <div class="col-md-6 col-lg-4 col-xl">
+                    <div class="card p-3 shadow-sm h-100 border-start border-4 border-success">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="small text-muted text-uppercase fw-semibold">Tổng doanh thu</div>
+                                <h4 class="fw-bold text-success mb-0 mt-1"
+                                    th:text="${#numbers.formatDecimal(stats.totalRevenue, 0, 'POINT', 0, 'COMMA')} + 'đ'">0đ</h4>
+                            </div>
+                            <div class="stat-icon bg-success"><i class="bi bi-cash-coin"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tong so ve da ban -->
+                <div class="col-md-6 col-lg-4 col-xl">
+                    <div class="card p-3 shadow-sm h-100 border-start border-4 border-warning">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="small text-muted text-uppercase fw-semibold">Vé đã bán</div>
+                                <h4 class="fw-bold text-accent mb-0 mt-1" th:text="${stats.totalSoldTickets}">0</h4>
+                            </div>
+                            <div class="stat-icon bg-warning"><i class="bi bi-ticket-perforated"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tong so chuyen xe -->
+                <div class="col-md-6 col-lg-4 col-xl">
+                    <div class="card p-3 shadow-sm h-100 border-start border-4 border-primary">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="small text-muted text-uppercase fw-semibold">Tổng chuyến xe</div>
+                                <h4 class="fw-bold text-primary mb-0 mt-1" th:text="${stats.totalTrips}">0</h4>
+                            </div>
+                            <div class="stat-icon bg-primary"><i class="bi bi-signpost-split"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tong khach hang -->
+                <div class="col-md-6 col-lg-4 col-xl">
+                    <div class="card p-3 shadow-sm h-100 border-start border-4 border-info">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="small text-muted text-uppercase fw-semibold">Khách hàng</div>
+                                <h4 class="fw-bold text-info mb-0 mt-1" th:text="${stats.totalCustomers}">0</h4>
+                            </div>
+                            <div class="stat-icon bg-info"><i class="bi bi-people"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ve cho thanh toan -->
+                <div class="col-md-6 col-lg-4 col-xl">
+                    <div class="card p-3 shadow-sm h-100 border-start border-4 border-danger">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="small text-muted text-uppercase fw-semibold">Chờ thanh toán</div>
+                                <h4 class="fw-bold text-danger mb-0 mt-1" th:text="${stats.pendingTickets}">0</h4>
+                            </div>
+                            <div class="stat-icon bg-danger"><i class="bi bi-clock-history"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4 BIEU DO CHART.JS -->
+            <div class="row g-4">
+
+                <!-- Chart 1: Doanh thu theo thang -->
+                <div class="col-lg-8">
+                    <div class="card p-4 shadow-sm h-100">
+                        <h6 class="fw-bold text-primary-dark mb-3">
+                            <i class="bi bi-bar-chart-line-fill text-primary me-2"></i>Doanh thu 6 tháng gần nhất (VNĐ)
+                        </h6>
+                        <div style="height: 300px;">
+                            <canvas id="monthlyRevenueChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Ty le lap day ghe -->
+                <div class="col-lg-4">
+                    <div class="card p-4 shadow-sm h-100 text-center">
+                        <h6 class="fw-bold text-primary-dark mb-3">
+                            <i class="bi bi-pie-chart-fill text-success me-2"></i>Tỷ lệ lấp đầy ghế
+                        </h6>
+                        <div style="height: 230px; position: relative;">
+                            <canvas id="occupancyChart"></canvas>
+                        </div>
+                        <div class="mt-3 small text-muted">
+                            Lấp đầy: <strong class="text-success" th:text="${stats.occupancyRate} + '%'">0%</strong>
+                            (<span th:text="${stats.totalBookedSeats} + '/' + ${stats.totalSeatsInSystem}"></span> ghế)
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart 3: So ve ban theo 7 ngay qua -->
+                <div class="col-lg-6">
+                    <div class="card p-4 shadow-sm h-100">
+                        <h6 class="fw-bold text-primary-dark mb-3">
+                            <i class="bi bi-graph-up text-accent me-2"></i>Số lượng vé bán trong 7 ngày gần nhất
+                        </h6>
+                        <div style="height: 260px;">
+                            <canvas id="dailyTicketsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart 4: Doanh thu theo tuyen xe -->
+                <div class="col-lg-6">
+                    <div class="card p-4 shadow-sm h-100">
+                        <h6 class="fw-bold text-primary-dark mb-3">
+                            <i class="bi bi-signpost-fill text-info me-2"></i>Doanh thu theo các tuyến xe hàng đầu
+                        </h6>
+                        <div style="height: 260px;">
+                            <canvas id="routeRevenueChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<div th:replace="~{fragments/layout :: toasts}"></div>
+<th:block th:replace="~{fragments/admin-layout :: adminScripts}"></th:block>
+
+<!-- SCRIPT KHOI TAO CHART.JS -->
+<script th:inline="javascript">
+/*<![CDATA[*/
+    const monthlyLabels = /*[[${stats.monthlyRevenueLabels}]]*/ [];
+    const monthlyData   = /*[[${stats.monthlyRevenueData}]]*/ [];
+
+    const dailyLabels = /*[[${stats.dailyTicketsLabels}]]*/ [];
+    const dailyData   = /*[[${stats.dailyTicketsData}]]*/ [];
+
+    const routeLabels = /*[[${stats.routeRevenueLabels}]]*/ [];
+    const routeData   = /*[[${stats.routeRevenueData}]]*/ [];
+
+    const bookedSeats = /*[[${stats.totalBookedSeats}]]*/ 0;
+    const emptySeats  = Math.max(0, /*[[${stats.totalSeatsInSystem}]]*/ 0 - bookedSeats);
+
+    // 1. Chart Doanh thu theo thang (Bar)
+    new Chart(document.getElementById('monthlyRevenueChart'), {
+        type: 'bar',
+        data: {
+            labels: monthlyLabels,
+            datasets: [{
+                label: 'Doanh thu (VNĐ)',
+                data: monthlyData,
+                backgroundColor: '#1976D2',
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    ticks: {
+                        callback: v => new Intl.NumberFormat('vi-VN').format(v) + 'đ'
+                    }
+                }
+            }
+        }
+    });
+
+    // 2. Chart Ty le lap day (Doughnut)
+    new Chart(document.getElementById('occupancyChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Ghế đã đặt', 'Ghế còn trống'],
+            datasets: [{
+                data: [bookedSeats, emptySeats],
+                backgroundColor: ['#10b981', '#e2e8f0']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+
+    // 3. Chart So ve ban 7 ngay qua (Line)
+    new Chart(document.getElementById('dailyTicketsChart'), {
+        type: 'line',
+        data: {
+            labels: dailyLabels,
+            datasets: [{
+                label: 'Số vé bán',
+                data: dailyData,
+                borderColor: '#FF8A00',
+                backgroundColor: 'rgba(255, 138, 0, 0.1)',
+                tension: 0.35,
+                fill: true,
+                pointRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+
+    // 4. Chart Doanh thu theo tuyen (Bar ngang / Doughnut)
+    new Chart(document.getElementById('routeRevenueChart'), {
+        type: 'bar',
+        data: {
+            labels: routeLabels.length > 0 ? routeLabels : ['Chưa có dữ liệu'],
+            datasets: [{
+                label: 'Doanh thu',
+                data: routeData.length > 0 ? routeData : [0],
+                backgroundColor: '#123B68',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: {
+                    ticks: {
+                        callback: v => new Intl.NumberFormat('vi-VN').format(v) + 'đ'
+                    }
+                }
+            }
+        }
+    });
+/*]]>*/
+</script>
+</body>
+</html>

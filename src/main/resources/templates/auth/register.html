@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Đăng ký')}"></head>
+<body class="bg-page">
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main class="container auth-wrapper">
+    <div class="row justify-content-center">
+        <div class="col-md-9 col-lg-6">
+            <div class="card auth-card">
+                <div class="card-body p-4 p-md-5">
+                    <div class="text-center mb-4">
+                        <div class="auth-icon"><i class="bi bi-person-plus"></i></div>
+                        <h3 class="fw-bold text-primary-dark mb-1">Tạo tài khoản</h3>
+                        <p class="text-muted mb-0">Đặt vé nhanh hơn, tích lũy ưu đãi thành viên</p>
+                    </div>
+
+                    <form th:action="@{/register}" th:object="${registerRequest}" method="post" novalidate>
+                        <div class="mb-3">
+                            <label class="form-label" for="fullName">Họ và tên</label>
+                            <input type="text" id="fullName" th:field="*{fullName}" class="form-control"
+                                   th:errorclass="is-invalid" placeholder="Nguyễn Văn A">
+                            <div class="invalid-feedback" th:errors="*{fullName}"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" for="phone">Số điện thoại</label>
+                                <input type="tel" id="phone" th:field="*{phone}" class="form-control"
+                                       th:errorclass="is-invalid" placeholder="0912345678">
+                                <div class="invalid-feedback" th:errors="*{phone}"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" for="email">Email</label>
+                                <input type="email" id="email" th:field="*{email}" class="form-control"
+                                       th:errorclass="is-invalid" placeholder="ban@email.com">
+                                <div class="invalid-feedback" th:errors="*{email}"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="password">Mật khẩu</label>
+                            <div class="input-group has-validation">
+                                <input type="password" id="password" th:field="*{password}" class="form-control"
+                                       th:errorclass="is-invalid" placeholder="Tối thiểu 6 ký tự">
+                                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="password">
+                                    <i class="bi bi-eye"></i></button>
+                                <div class="invalid-feedback" th:errors="*{password}"></div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="confirmPassword">Xác nhận mật khẩu</label>
+                            <input type="password" id="confirmPassword" th:field="*{confirmPassword}" class="form-control"
+                                   th:errorclass="is-invalid" placeholder="Nhập lại mật khẩu">
+                            <div class="invalid-feedback" th:errors="*{confirmPassword}"></div>
+                        </div>
+                        <button type="submit" class="btn btn-accent w-100 py-2">
+                            <i class="bi bi-person-check me-1"></i>Đăng ký</button>
+                    </form>
+
+                    <p class="text-center mt-4 mb-0">Đã có tài khoản?
+                        <a th:href="@{/login}" class="fw-semibold">Đăng nhập</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

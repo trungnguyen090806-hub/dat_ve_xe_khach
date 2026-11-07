@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Hệ thống đặt vé xe khách trực tuyến')}"></head>
+<body class="bg-page">
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<!-- ========== 1. HERO BANNER & FORM TIM KIEM ========== -->
+<section class="hero-section">
+    <div class="container text-center py-4">
+        <h1 class="hero-title mb-3">
+            Đặt vé xe khách <span class="text-accent">nhanh chóng & tiện lợi</span>
+        </h1>
+        <p class="hero-subtitle mb-4">
+            Kết nối hơn 100+ nhà xe uy tín trên toàn quốc. Đặt vé chỉ trong 60 giây, cam kết giữ chỗ 100%.
+        </p>
+    </div>
+</section>
+
+<!-- Form tim kiem noi len tren hero -->
+<div class="container mb-5">
+    <div class="search-box-card">
+        <form th:action="@{/search}" method="get" id="searchForm">
+            <div class="row g-3 align-items-end">
+                <!-- Diem di -->
+                <div class="col-lg-3 col-md-6 position-relative">
+                    <label class="form-label" for="originInput">
+                        <i class="bi bi-geo-alt-fill text-primary me-1"></i>Điểm đi
+                    </label>
+                    <input type="text" class="form-control" id="originInput" name="origin" list="originList"
+                           placeholder="Ví dụ: Hà Nội" required autocomplete="off">
+                    <datalist id="originList">
+                        <option th:each="o : ${origins}" th:value="${o}"></option>
+                    </datalist>
+                </div>
+
+                <!-- Nut hoan doi -->
+                <div class="col-auto d-none d-lg-flex align-items-center justify-content-center pb-1">
+                    <button type="button" class="swap-btn" id="swapLocationsBtn" title="Đổi điểm đi - điểm đến">
+                        <i class="bi bi-arrow-left-right"></i>
+                    </button>
+                </div>
+
+                <!-- Diem den -->
+                <div class="col-lg-3 col-md-6 position-relative">
+                    <label class="form-label" for="destinationInput">
+                        <i class="bi bi-geo-fill text-accent me-1"></i>Điểm đến
+                    </label>
+                    <input type="text" class="form-control" id="destinationInput" name="destination" list="destList"
+                           placeholder="Ví dụ: Hải Phòng" required autocomplete="off">
+                    <datalist id="destList">
+                        <option th:each="d : ${destinations}" th:value="${d}"></option>
+                    </datalist>
+                </div>
+
+                <!-- Ngay khoi hanh -->
+                <div class="col-lg-2 col-md-6">
+                    <label class="form-label" for="deptDateInput">
+                        <i class="bi bi-calendar-event text-primary me-1"></i>Ngày đi
+                    </label>
+                    <input type="date" class="form-control" id="deptDateInput" name="departureDate"
+                           th:min="${today}" th:value="${today}" required>
+                </div>
+
+                <!-- So luong khach -->
+                <div class="col-lg-1 col-md-6">
+                    <label class="form-label" for="passengersInput">
+                        <i class="bi bi-people text-primary me-1"></i>Số vé
+                    </label>
+                    <select class="form-select" id="passengersInput" name="passengers">
+                        <option value="1" selected>1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+
+                <!-- Nut Tim chuyen xe -->
+                <div class="col-lg-2 col-md-12">
+                    <button type="submit" class="btn btn-accent w-100 py-2 fs-6">
+                        <i class="bi bi-search me-1"></i>Tìm chuyến
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ========== 2. TUYEN XE PHO BIEN ========== -->
+<section class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-primary-dark mb-1">
+                <i class="bi bi-fire text-accent me-2"></i>Tuyến xe phổ biến
+            </h3>
+            <p class="text-muted mb-0">Các tuyến đường có lượt đặt nhiều nhất trong tuần</p>
+        </div>
+        <a th:href="@{/search}" class="btn btn-outline-primary btn-sm d-none d-md-inline-block">
+            Xem tất cả tuyến <i class="bi bi-chevron-right ms-1"></i>
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-6 col-lg-3" th:each="r : ${popularRoutes}">
+            <div class="route-card">
+                <div class="route-img-wrap">
+                    <img th:src="${r.image}" th:alt="${r.origin} + ' - ' + ${r.destination}">
+                    <div class="route-price-badge">Từ <span th:text="${r.price}"></span></div>
+                </div>
+                <div class="p-3">
+                    <h5 class="fw-bold text-primary-dark mb-1">
+                        <span th:text="${r.origin}"></span>
+                        <i class="bi bi-arrow-right text-accent mx-1"></i>
+                        <span th:text="${r.destination}"></span>
+                    </h5>
+                    <p class="small text-muted mb-3" th:text="${r.description}">Mô tả tuyến</p>
+                    <a th:href="@{/search(origin=${r.origin}, destination=${r.destination})}"
+                       class="btn btn-sm btn-outline-primary w-100">
+                        <i class="bi bi-ticket-perforated me-1"></i>Tìm vé tuyến này
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== 3. CAC CHUYEN XE DE XUAT ========== -->
+<section class="container py-4" th:if="${not #lists.isEmpty(recommendedTrips)}">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-primary-dark mb-1">
+                <i class="bi bi-stars text-warning me-2"></i>Chuyến xe đề xuất cho bạn
+            </h3>
+            <p class="text-muted mb-0">Chuyến xe khởi hành sớm, giá tốt và nhiều chỗ trống</p>
+        </div>
+        <a th:href="@{/search}" class="btn btn-outline-primary btn-sm">Xem thêm</a>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6 col-lg-4" th:each="t : ${recommendedTrips}">
+            <div class="card card-hover p-3 h-100 border">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <h6 class="fw-bold text-primary-dark mb-0" th:text="${t.companyName}">Hoàng Long</h6>
+                        <small class="text-muted">
+                            <i class="bi bi-bus-front me-1"></i><span th:text="${t.busTypeLabel}">Giường nằm</span>
+                        </small>
+                    </div>
+                    <div class="badge-soft badge-soft-warning">
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <span th:text="${t.companyRatingAvg}">4.6</span>
+                    </div>
+                </div>
+
+                <div class="py-2 border-top border-bottom my-2">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <div>
+                            <span class="fs-5 fw-bold text-primary-dark" th:text="${#temporals.format(t.departureTime, 'HH:mm')}">07:00</span>
+                            <div class="small text-muted" th:text="${t.origin}">Hà Nội</div>
+                        </div>
+                        <div class="text-center px-2">
+                            <small class="text-muted d-block" th:text="${t.durationText}">2h30</small>
+                            <i class="bi bi-arrow-right text-accent fs-5"></i>
+                        </div>
+                        <div class="text-end">
+                            <span class="fs-5 fw-bold text-primary-dark" th:text="${#temporals.format(t.arrivalTime, 'HH:mm')}">09:30</span>
+                            <div class="small text-muted" th:text="${t.destination}">Hải Phòng</div>
+                        </div>
+                    </div>
+                    <div class="small text-muted d-flex justify-content-between">
+                        <span><i class="bi bi-calendar3 me-1"></i><span th:text="${#temporals.format(t.departureTime, 'dd/MM/yyyy')}"></span></span>
+                        <span class="text-success fw-semibold">Còn <strong th:text="${t.availableSeats}">38</strong> chỗ</span>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <div>
+                        <span class="fs-5 fw-bold text-accent" th:text="${#numbers.formatDecimal(t.basePrice, 0, 'POINT', 0, 'COMMA')} + 'đ'">120.000đ</span>
+                        <span class="small text-muted d-block" th:if="${t.vipSurcharge > 0}"
+                              th:text="'VIP +' + ${#numbers.formatDecimal(t.vipSurcharge, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                    </div>
+                    <a th:href="@{/trips/{id}/seats(id=${t.id})}" class="btn btn-accent btn-sm px-3">
+                        Chọn ghế
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== 4. NHA XE NOI BAT ========== -->
+<section class="container py-4">
+    <div class="mb-4">
+        <h3 class="fw-bold text-primary-dark mb-1">
+            <i class="bi bi-building-check text-primary me-2"></i>Đối tác nhà xe nổi bật
+        </h3>
+        <p class="text-muted mb-0">Đồng hành cùng những thương hiệu vận tải hàng đầu Việt Nam</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-6 col-md-4 col-lg-2" th:each="c : ${featuredCompanies}">
+            <div class="company-card">
+                <div class="company-avatar">
+                    <i class="bi bi-bus-front-fill"></i>
+                </div>
+                <h6 class="fw-bold text-primary-dark text-truncate mb-1" th:text="${c.name}" th:title="${c.name}">Hoàng Long</h6>
+                <div class="small mb-2">
+                    <i class="bi bi-star-fill text-warning"></i>
+                    <strong th:text="${c.ratingAvg}">4.6</strong>
+                    <span class="text-muted" th:text="'(' + ${c.ratingCount} + ')'"></span>
+                </div>
+                <div class="small text-muted mb-2">
+                    <i class="bi bi-telephone me-1"></i><span th:text="${c.hotline}">1900 6067</span>
+                </div>
+                <a th:href="@{/search(companyId=${c.id})}" class="btn btn-outline-primary btn-sm w-100 py-1">
+                    Xem chuyến
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== 5. LY DO CHON BUSGO ========== -->
+<section class="bg-white py-5 mt-4">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h3 class="fw-bold text-primary-dark mb-2">Vì sao bạn nên chọn BusGo?</h3>
+            <p class="text-muted">Chúng tôi mang lại trải nghiệm đặt vé tiện lợi, minh bạch và an toàn nhất</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-box">
+                    <div class="feature-icon-circle">
+                        <i class="bi bi-map"></i>
+                    </div>
+                    <h5 class="fw-bold text-primary-dark">Mạng lưới rộng khắp</h5>
+                    <p class="text-muted small mb-0">Hơn 500+ tuyến đường kết nối các tỉnh thành từ Bắc vào Nam với tần suất liên tục trong ngày.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-box">
+                    <div class="feature-icon-circle">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <h5 class="fw-bold text-primary-dark">Cam kết giữ 100% chỗ</h5>
+                    <p class="text-muted small mb-0">Sơ đồ ghế hiển thị trực quan theo thời gian thực. Giữ ghế chính xác, không lo bị trùng vé.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-box">
+                    <div class="feature-icon-circle">
+                        <i class="bi bi-tag"></i>
+                    </div>
+                    <h5 class="fw-bold text-primary-dark">Giá vé minh bạch</h5>
+                    <p class="text-muted small mb-0">Giá niêm yết rõ ràng, không phụ phí ẩn. Tích điểm nâng hạng thành viên giảm đến 10%.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-box">
+                    <div class="feature-icon-circle">
+                        <i class="bi bi-headset"></i>
+                    </div>
+                    <h5 class="fw-bold text-primary-dark">Hỗ trợ chu đáo 24/7</h5>
+                    <p class="text-muted small mb-0">Đội ngũ nhân viên tổng đài luôn sẵn sàng giải đáp thắc mắc, hỗ trợ đổi trả vé nhanh chóng.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

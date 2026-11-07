@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/admin-layout :: adminHead('Quản lý thanh toán')}"></head>
+<body class="admin-body">
+<div class="admin-wrapper">
+    <aside th:replace="~{fragments/admin-layout :: sidebar('payments')}"></aside>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/admin-layout :: topbar('Quản lý Thanh toán & Giao dịch')}"></div>
+
+        <main class="admin-content">
+            <!-- Bo loc -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <form method="get" th:action="@{/admin/payments}" class="row g-2 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label">Tìm kiếm</label>
+                            <input type="text" name="keyword" th:value="${keyword}" class="form-control"
+                                   placeholder="Mã giao dịch, mã vé...">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Phương thức</label>
+                            <select name="method" class="form-select">
+                                <option value="">Tất cả</option>
+                                <option th:each="m : ${methods}" th:value="${m}" th:text="${m.label}"
+                                        th:selected="${m.name() == methodParam}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Trạng thái</label>
+                            <select name="status" class="form-select">
+                                <option value="">Tất cả</option>
+                                <option th:each="s : ${statuses}" th:value="${s}" th:text="${s.label}"
+                                        th:selected="${s.name() == statusParam}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex gap-2">
+                            <button class="btn btn-primary-brand w-100"><i class="bi bi-funnel me-1"></i>Lọc</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Bang giao dich -->
+            <div class="card table-card">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                        <tr>
+                            <th>Mã giao dịch</th>
+                            <th>Mã vé</th>
+                            <th>Hành khách</th>
+                            <th>Phương thức</th>
+                            <th class="text-end">Số tiền</th>
+                            <th>Thời gian</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="p : ${page.content}">
+                            <td class="fw-bold font-monospace text-primary-dark" th:text="${p.transactionCode}">TXN123456</td>
+                            <td>
+                                <a th:href="@{/admin/tickets/{id}(id=${p.ticket.id})}" class="font-monospace fw-semibold text-accent"
+                                   th:text="${p.ticket.ticketCode}">BG123456</a>
+                            </td>
+                            <td>
+                                <strong th:text="${p.ticket.passengerName}"></strong>
+                                <div class="small text-muted" th:text="${p.ticket.passengerPhone}"></div>
+                            </td>
+                            <td th:text="${p.method.label}">Chuyển khoản</td>
+                            <td class="text-end fw-bold text-accent"
+                                th:text="${#numbers.formatDecimal(p.amount, 0, 'POINT', 0, 'COMMA')} + 'đ'">0đ</td>
+                            <td class="small text-muted" th:text="${#temporals.format(p.createdAt, 'HH:mm - dd/MM/yyyy')}"></td>
+                            <td>
+                                <span class="badge-soft" th:text="${p.status.label}"
+                                      th:classappend="${p.status.name() == 'SUCCESS'} ? 'badge-soft-success' :
+                                                      (${p.status.name() == 'REFUNDED'} ? 'badge-soft-warning' :
+                                                      (${p.status.name() == 'PENDING'} ? 'badge-soft-primary' : 'badge-soft-danger'))">
+                                </span>
+                            </td>
+                        </tr>
+                        <tr th:if="${page.empty}">
+                            <td colspan="7" class="text-center text-muted py-5">
+                                <i class="bi bi-receipt fs-1 d-block mb-2"></i>Không có giao dịch nào.
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card-footer bg-white d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+                    <small class="text-muted">Tổng <strong th:text="${page.totalElements}">0</strong> giao dịch</small>
+                    <div th:replace="~{fragments/admin-layout :: pagination(${page}, '/admin/payments', ${keyword}, ${statusParam})}"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<div th:replace="~{fragments/layout :: toasts}"></div>
+<th:block th:replace="~{fragments/admin-layout :: adminScripts}"></th:block>
+</body>
+</html>

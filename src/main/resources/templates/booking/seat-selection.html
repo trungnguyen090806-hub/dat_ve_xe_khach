@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Chọn ghế chuyến ' + ${trip.tripCode})}"></head>
+<body class="bg-page">
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<!-- Breadcrumb & Tom tat chuyen xe -->
+<div class="bg-primary-dark py-3 text-white shadow-sm">
+    <div class="container">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+            <div>
+                <a th:href="@{/search(origin=${trip.origin}, destination=${trip.destination})}"
+                   class="btn btn-outline-light btn-sm mb-2">
+                    <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách chuyến
+                </a>
+                <h4 class="fw-bold mb-0">
+                    <span th:text="${trip.origin}">Hà Nội</span>
+                    <i class="bi bi-arrow-right text-accent mx-2"></i>
+                    <span th:text="${trip.destination}">Hải Phòng</span>
+                    <span class="badge bg-accent ms-2 fs-6" th:text="${trip.tripCode}">HN-HP-001</span>
+                </h4>
+            </div>
+            <div class="text-md-end small text-white-50">
+                <div><i class="bi bi-calendar3 me-1"></i>Khởi hành: <strong class="text-white" th:text="${#temporals.format(trip.departureTime, 'HH:mm - dd/MM/yyyy')}"></strong></div>
+                <div><i class="bi bi-bus-front me-1"></i><span class="text-white" th:text="${trip.companyName}"></span> · <span th:text="${trip.busTypeLabel}"></span> (<span th:text="${trip.licensePlate}"></span>)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<main class="container py-4">
+    <div class="row g-4">
+
+        <!-- ================= COT TRAI: SO DO GHE 2 TANG ================= -->
+        <div class="col-lg-8">
+            <div class="bus-map-container">
+
+                <!-- Tieu de & Legend chu thich mau sac -->
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pb-3 mb-3 border-bottom gap-2">
+                    <h5 class="fw-bold text-primary-dark mb-0">
+                        <i class="bi bi-grid-3x3-gap-fill text-primary me-2"></i>Sơ đồ chọn ghế
+                    </h5>
+                    <div class="small text-muted">
+                        Bấm vào ghế còn trống để chọn giữ chỗ
+                    </div>
+                </div>
+
+                <!-- Bang chu thich mau sac (Legend) -->
+                <div class="d-flex flex-wrap gap-3 p-3 bg-light rounded-3 mb-4 justify-content-center">
+                    <div class="seat-legend-item">
+                        <div class="seat-legend-box seat-legend-available"></div>
+                        <span>Ghế trống</span>
+                    </div>
+                    <div class="seat-legend-item">
+                        <div class="seat-legend-box seat-legend-selected"></div>
+                        <span>Ghế đang chọn</span>
+                    </div>
+                    <div class="seat-legend-item">
+                        <div class="seat-legend-box seat-legend-booked"></div>
+                        <span>Ghế đã đặt</span>
+                    </div>
+                    <div class="seat-legend-item">
+                        <i class="bi bi-gem text-warning fs-5"></i>
+                        <span>Ghế VIP (+<span th:text="${#numbers.formatDecimal(trip.vipSurcharge, 0, 'POINT', 0, 'COMMA')}"></span>đ)</span>
+                    </div>
+                </div>
+
+                <!-- Alert dong ho dem nguoc giu cho (neu co) -->
+                <div th:if="${seatMap.currentHoldExpiresAt != null}" class="countdown-box mb-4" id="activeHoldAlert">
+                    <i class="bi bi-stopwatch-fill fs-5 text-warning"></i>
+                    <div>
+                        Bạn đang giữ tạm một số ghế. Thời gian giữ chỗ còn lại:
+                        <strong class="text-danger" id="countdownTimer" th:data-expire="${seatMap.currentHoldExpiresAt}">10:00</strong>
+                    </div>
+                </div>
+
+                <!-- So do xe 2 tang -->
+                <div class="row g-4">
+
+                    <!-- TANG 1 -->
+                    <div class="col-md-6">
+                        <div class="bus-floor-card">
+                            <div class="bus-front-indicator">
+                                <span><i class="bi bi-door-open me-1"></i>Cửa lên</span>
+                                <span class="badge bg-primary px-3">TẦNG 1 (Dưới)</span>
+                                <span><i class="bi bi-life-preserver me-1"></i>Tài xế</span>
+                            </div>
+
+                            <div class="seat-grid">
+                                <button type="button" th:each="s : ${seatMap.floor1Seats}"
+                                        class="seat-btn"
+                                        th:classappend="${s.status == 'BOOKED'} ? 'seat-booked' :
+                                                        (${s.status == 'HELD_BY_OTHER'} ? 'seat-held-other' :
+                                                        (${s.status == 'HELD_BY_ME'} ? 'seat-held-me' :
+                                                        ('seat-available' + (${s.seatType == 'VIP'} ? ' seat-vip' : ''))))"
+                                        th:data-seat-id="${s.id}"
+                                        th:data-seat-code="${s.seatCode}"
+                                        th:data-seat-type="${s.seatType}"
+                                        th:data-price="${s.price}"
+                                        th:data-surcharge="${s.surcharge}"
+                                        th:data-status="${s.status}"
+                                        th:disabled="${!s.canSelect}">
+                                    <span th:if="${s.seatType == 'VIP'}" class="seat-type-icon text-warning">
+                                        <i class="bi bi-gem"></i>
+                                    </span>
+                                    <span class="seat-code" th:text="${s.seatCode}">A01</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TANG 2 (neu xe co 2 tang) -->
+                    <div class="col-md-6" th:if="${seatMap.totalFloors >= 2}">
+                        <div class="bus-floor-card">
+                            <div class="bus-front-indicator">
+                                <span><i class="bi bi-arrow-up-right me-1"></i>Cầu thang</span>
+                                <span class="badge bg-secondary px-3">TẦNG 2 (Trên)</span>
+                                <span><i class="bi bi-wind me-1"></i>Kính chắn</span>
+                            </div>
+
+                            <div class="seat-grid">
+                                <button type="button" th:each="s : ${seatMap.floor2Seats}"
+                                        class="seat-btn"
+                                        th:classappend="${s.status == 'BOOKED'} ? 'seat-booked' :
+                                                        (${s.status == 'HELD_BY_OTHER'} ? 'seat-held-other' :
+                                                        (${s.status == 'HELD_BY_ME'} ? 'seat-held-me' :
+                                                        ('seat-available' + (${s.seatType == 'VIP'} ? ' seat-vip' : ''))))"
+                                        th:data-seat-id="${s.id}"
+                                        th:data-seat-code="${s.seatCode}"
+                                        th:data-seat-type="${s.seatType}"
+                                        th:data-price="${s.price}"
+                                        th:data-surcharge="${s.surcharge}"
+                                        th:data-status="${s.status}"
+                                        th:disabled="${!s.canSelect}">
+                                    <span th:if="${s.seatType == 'VIP'}" class="seat-type-icon text-warning">
+                                        <i class="bi bi-gem"></i>
+                                    </span>
+                                    <span class="seat-code" th:text="${s.seatCode}">B01</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="text-muted small mt-4 p-2 bg-light rounded text-center">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Ghế bạn chọn sẽ được hệ thống giữ tạm trong vòng <strong>10 phút</strong>. Vui lòng hoàn tất thanh toán trước khi hết hạn.
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= COT PHAI: TOM TAT & TINH TIEN ================= -->
+        <div class="col-lg-4">
+            <div class="summary-card">
+                <h5 class="fw-bold text-primary-dark mb-3 pb-2 border-bottom">
+                    <i class="bi bi-receipt text-primary me-2"></i>Thông tin đặt vé
+                </h5>
+
+                <!-- Thong tin nha xe & tuyen -->
+                <div class="mb-3">
+                    <div class="fw-bold text-primary-dark" th:text="${trip.companyName}">Nhà xe</div>
+                    <div class="small text-muted">
+                        <span th:text="${trip.pickupPoint ?: trip.origin}"></span>
+                        <i class="bi bi-arrow-right mx-1 text-accent"></i>
+                        <span th:text="${trip.dropoffPoint ?: trip.destination}"></span>
+                    </div>
+                    <div class="small text-muted mt-1">
+                        <i class="bi bi-clock me-1"></i><span th:text="${#temporals.format(trip.departureTime, 'HH:mm - dd/MM/yyyy')}"></span>
+                    </div>
+                </div>
+
+                <!-- Danh sach ghe da chon -->
+                <div class="mb-3">
+                    <label class="form-label d-flex justify-content-between">
+                        <span>Ghế đã chọn:</span>
+                        <span id="selectedCountText" class="fw-bold text-primary">0 ghế</span>
+                    </label>
+                    <div id="selectedSeatsContainer" class="d-flex flex-wrap gap-2 min-vh-20">
+                        <span class="text-muted small fst-italic" id="emptySeatNotice">Chưa có ghế nào được chọn.</span>
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- Bang tinh tien chi tiet -->
+                <div class="small mb-3">
+                    <div class="d-flex justify-content-between py-1">
+                        <span class="text-muted">Giá vé gốc:</span>
+                        <span class="fw-semibold" id="basePriceSummary">0đ</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1">
+                        <span class="text-muted">Phụ phí ghế VIP:</span>
+                        <span class="fw-semibold text-warning" id="vipSurchargeSummary">0đ</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2 border-top mt-2">
+                        <span class="fw-bold text-primary-dark fs-6">Tổng tiền:</span>
+                        <span class="fw-bold text-accent fs-5" id="totalPriceSummary">0đ</span>
+                    </div>
+                </div>
+
+                <!-- Nut Tiep tuc -->
+                <button type="button" class="btn btn-accent w-100 py-2 fs-6 mb-2" id="btnContinueBooking" disabled>
+                    <i class="bi bi-arrow-right-circle me-1"></i>Tiếp tục đặt vé
+                </button>
+
+                <div class="text-center">
+                    <small class="text-muted" th:if="${!isLoggedIn}">
+                        <i class="bi bi-lock me-1"></i>Bạn sẽ được yêu cầu đăng nhập ở bước tiếp theo.
+                    </small>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+
+<!-- SCRIPT XU LY CHON GHE & TU DONG TINH TIEN -->
+<script th:inline="javascript">
+/*<![CDATA[*/
+    const TRIP_ID = /*[[${trip.id}]]*/ 0;
+    const BASE_PRICE = /*[[${trip.basePrice}]]*/ 0;
+    const VIP_SURCHARGE = /*[[${trip.vipSurcharge}]]*/ 0;
+    const IS_LOGGED_IN = /*[[${isLoggedIn}]]*/ false;
+    const PRE_HELD_IDS = /*[[${seatMap.myHeldSeatIds}]]*/ [];
+
+    // Map luu danh sach ghe dang duoc chon: seatId -> { id, code, type, price, surcharge }
+    const selectedSeats = new Map();
+
+    function formatMoney(amount) {
+        return new Intl.NumberFormat('vi-VN').format(amount) + 'đ';
+    }
+
+    function updateSummary() {
+        const count = selectedSeats.size;
+        document.getElementById('selectedCountText').textContent = count + ' ghế';
+
+        const container = document.getElementById('selectedSeatsContainer');
+        const emptyNotice = document.getElementById('emptySeatNotice');
+        const btnContinue = document.getElementById('btnContinueBooking');
+
+        if (count === 0) {
+            container.innerHTML = '';
+            if (emptyNotice) container.appendChild(emptyNotice);
+            document.getElementById('basePriceSummary').textContent = '0đ';
+            document.getElementById('vipSurchargeSummary').textContent = '0đ';
+            document.getElementById('totalPriceSummary').textContent = '0đ';
+            btnContinue.disabled = true;
+            return;
+        }
+
+        container.innerHTML = '';
+        let totalBase = 0;
+        let totalVip = 0;
+        let total = 0;
+
+        selectedSeats.forEach(seat => {
+            totalBase += BASE_PRICE;
+            totalVip += seat.surcharge;
+            total += seat.price;
+
+            const tag = document.createElement('span');
+            tag.className = 'selected-seat-tag';
+            tag.innerHTML = seat.code + (seat.type === 'VIP' ? ' <i class="bi bi-gem text-warning"></i>' : '') +
+                ' <i class="bi bi-x-circle-fill remove-seat-btn" title="Bỏ chọn"></i>';
+            tag.querySelector('.remove-seat-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleSeat(seat.id);
+            });
+            container.appendChild(tag);
+        });
+
+        document.getElementById('basePriceSummary').textContent = formatMoney(totalBase);
+        document.getElementById('vipSurchargeSummary').textContent = formatMoney(totalVip);
+        document.getElementById('totalPriceSummary').textContent = formatMoney(total);
+        btnContinue.disabled = false;
+    }
+
+    function toggleSeat(seatId) {
+        const btn = document.querySelector(`.seat-btn[data-seat-id="${seatId}"]`);
+        if (!btn || btn.disabled) return;
+
+        if (selectedSeats.has(seatId)) {
+            selectedSeats.delete(seatId);
+            btn.classList.remove('seat-selected');
+            if (btn.dataset.status === 'HELD_BY_ME') {
+                btn.classList.add('seat-held-me');
+            } else {
+                btn.classList.add('seat-available');
+            }
+        } else {
+            const code = btn.dataset.seatCode;
+            const type = btn.dataset.seatType;
+            const price = parseFloat(btn.dataset.price);
+            const surcharge = parseFloat(btn.dataset.surcharge);
+
+            selectedSeats.set(seatId, { id: seatId, code, type, price, surcharge });
+            btn.classList.remove('seat-available', 'seat-held-me');
+            btn.classList.add('seat-selected');
+        }
+
+        updateSummary();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Gan event click cho tat ca cac ghe hop le
+        document.querySelectorAll('.seat-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const seatId = parseInt(btn.dataset.seatId);
+                const status = btn.dataset.status;
+
+                if (status === 'BOOKED') {
+                    showToast('error', 'Ghế ' + btn.dataset.seatCode + ' đã có người đặt mua.');
+                    return;
+                }
+                if (status === 'HELD_BY_OTHER') {
+                    showToast('warning', 'Ghế ' + btn.dataset.seatCode + ' đang có khách hàng khác giữ chỗ.');
+                    return;
+                }
+
+                toggleSeat(seatId);
+            });
+        });
+
+        // Tu dong nap cac ghe ma chinh user dang giu
+        if (PRE_HELD_IDS && PRE_HELD_IDS.length > 0) {
+            PRE_HELD_IDS.forEach(id => toggleSeat(id));
+        }
+
+        // Xu ly dong ho dem nguoc neu dang giu cho
+        const countdownEl = document.getElementById('countdownTimer');
+        if (countdownEl && countdownEl.dataset.expire) {
+            const expireTime = new Date(countdownEl.dataset.expire).getTime();
+            const timer = setInterval(() => {
+                const now = new Date().getTime();
+                const distance = expireTime - now;
+
+                if (distance <= 0) {
+                    clearInterval(timer);
+                    countdownEl.textContent = 'HẾT HẠN';
+                    showToast('warning', 'Thời gian giữ ghế đã hết. Vui lòng chọn lại.');
+                    setTimeout(() => location.reload(), 2000);
+                    return;
+                }
+
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                countdownEl.textContent = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+            }, 1000);
+        }
+
+        // Xu ly nut "Tiep tuc dat ve"
+        const btnContinue = document.getElementById('btnContinueBooking');
+        if (btnContinue) {
+            btnContinue.addEventListener('click', async () => {
+                if (selectedSeats.size === 0) return;
+
+                if (!IS_LOGGED_IN) {
+                    showToast('info', 'Vui lòng đăng nhập để tiến hành giữ chỗ và đặt vé.');
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 1500);
+                    return;
+                }
+
+                btnContinue.disabled = true;
+                btnContinue.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang giữ chỗ...';
+
+                const seatIds = Array.from(selectedSeats.keys());
+
+                try {
+                    const response = await fetch(`/trips/${TRIP_ID}/api/hold-seats`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            tripId: TRIP_ID,
+                            seatIds: seatIds
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.success) {
+                        showToast('success', data.message);
+                        setTimeout(() => {
+                            window.location.href = data.redirectUrl;
+                        }, 1000);
+                    } else {
+                        showToast('error', data.message || 'Không thể giữ ghế. Vui lòng thử lại.');
+                        btnContinue.disabled = false;
+                        btnContinue.innerHTML = '<i class="bi bi-arrow-right-circle me-1"></i>Tiếp tục đặt vé';
+                        // Refresh lai trang sau 2s neu ghe da bi nguoi khac giu
+                        setTimeout(() => location.reload(), 2000);
+                    }
+                } catch (err) {
+                    showToast('error', 'Lỗi kết nối máy chủ. Vui lòng thử lại.');
+                    btnContinue.disabled = false;
+                    btnContinue.innerHTML = '<i class="bi bi-arrow-right-circle me-1"></i>Tiếp tục đặt vé';
+                }
+            });
+        }
+    });
+/*]]>*/
+</script>
+</body>
+</html>

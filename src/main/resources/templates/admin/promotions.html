@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/admin-layout :: adminHead('Quản lý khuyến mãi')}"></head>
+<body class="admin-body">
+<div class="admin-wrapper">
+    <aside th:replace="~{fragments/admin-layout :: sidebar('promotions')}"></aside>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/admin-layout :: topbar('Quản lý Mã Khuyến mãi')}"></div>
+
+        <main class="admin-content">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-primary-dark mb-0">Danh sách chương trình ưu đãi &amp; Mã giảm giá</h5>
+                <button type="button" class="btn btn-accent btn-sm px-3" data-bs-toggle="modal"
+                        data-bs-target="#promoModal" data-mode="add">
+                    <i class="bi bi-plus-lg me-1"></i>Thêm mã mới
+                </button>
+            </div>
+
+            <!-- Bang khuyen mai -->
+            <div class="card table-card">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                        <tr>
+                            <th>Mã ưu đãi</th>
+                            <th>Mô tả</th>
+                            <th>Mức giảm</th>
+                            <th>Giảm tối đa</th>
+                            <th>Đơn tối thiểu</th>
+                            <th>Hạn dùng</th>
+                            <th class="text-center">Đã dùng</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="p : ${promotions}">
+                            <td>
+                                <strong class="font-monospace fs-6 text-primary" th:text="${p.code}">WELCOME10</strong>
+                            </td>
+                            <td class="small" th:text="${p.description}">Mô tả</td>
+                            <td>
+                                <strong class="text-accent" th:if="${p.discountType.name() == 'PERCENT'}"
+                                        th:text="${p.discountValue} + '%'">10%</strong>
+                                <strong class="text-accent" th:unless="${p.discountType.name() == 'PERCENT'}"
+                                        th:text="${#numbers.formatDecimal(p.discountValue, 0, 'POINT', 0, 'COMMA')} + 'đ'">50.000đ</strong>
+                            </td>
+                            <td class="small" th:text="${p.maxDiscount != null ? #numbers.formatDecimal(p.maxDiscount, 0, 'POINT', 0, 'COMMA') + 'đ' : 'Không giới hạn'}"></td>
+                            <td class="small" th:text="${#numbers.formatDecimal(p.minOrder, 0, 'POINT', 0, 'COMMA')} + 'đ'"></td>
+                            <td class="small text-muted" th:text="${#temporals.format(p.startDate, 'dd/MM/yyyy')} + ' - ' + ${#temporals.format(p.endDate, 'dd/MM/yyyy')}"></td>
+                            <td class="text-center" th:text="${p.usedCount} + '/' + ${p.usageLimit}">0/100</td>
+                            <td>
+                                <span th:if="${p.active}" class="badge bg-success">Đang bật</span>
+                                <span th:unless="${p.active}" class="badge bg-secondary">Tắt</span>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <!-- Bat / Tat -->
+                                <button type="button" class="btn btn-sm btn-icon"
+                                        th:classappend="${p.active} ? 'btn-outline-warning' : 'btn-outline-success'"
+                                        th:title="${p.active} ? 'Tắt mã' : 'Bật mã'"
+                                        data-bs-toggle="modal" data-bs-target="#confirmModal"
+                                        th:data-confirm-action="@{/admin/promotions/{id}/toggle-active(id=${p.id})}"
+                                        data-confirm-title="Đổi trạng thái mã ưu đãi"
+                                        th:data-confirm-message="'Bạn có chắc muốn ' + (${p.active} ? 'TẮT' : 'BẬT') + ' mã ' + ${p.code} + '?'"
+                                        data-confirm-button="Lưu"
+                                        th:data-confirm-class="${p.active} ? 'btn-warning' : 'btn-success'">
+                                    <i class="bi" th:classappend="${p.active} ? 'bi-toggle-on text-warning fs-5' : 'bi-toggle-off text-muted fs-5'"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(promotions)}">
+                            <td colspan="9" class="text-center text-muted py-5">Chưa có mã khuyến mãi nào.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Modal them ma khuyen mai -->
+<div class="modal fade" id="promoModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" method="post" th:action="@{/admin/promotions/save}">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm mã khuyến mãi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Mã code *</label>
+                        <input type="text" name="code" class="form-control text-uppercase font-monospace" required placeholder="VD: SUMMER10">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Loại giảm *</label>
+                        <select name="discountType" class="form-select">
+                            <option value="PERCENT">Giảm theo % (PERCENT)</option>
+                            <option value="AMOUNT">Giảm số tiền cố định (AMOUNT)</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Mô tả chương trình</label>
+                        <input type="text" name="description" class="form-control" placeholder="Giảm 10% cho chuyến mùa hè">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Giá trị giảm *</label>
+                        <input type="number" name="discountValue" class="form-control" required min="1" step="1000" placeholder="10 (nếu %) hoặc 50000">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Giảm tối đa (đ)</label>
+                        <input type="number" name="maxDiscount" class="form-control" min="0" step="1000" placeholder="Ví dụ: 50000">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Đơn tối thiểu (đ) *</label>
+                        <input type="number" name="minOrder" class="form-control" required min="0" step="1000" value="100000">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Giới hạn lượt dùng *</label>
+                        <input type="number" name="usageLimit" class="form-control" required min="1" value="100">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Ngày bắt đầu *</label>
+                        <input type="date" name="startDate" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Ngày kết thúc *</label>
+                        <input type="date" name="endDate" class="form-control" required>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
+                <button type="submit" class="btn btn-primary-brand"><i class="bi bi-check2 me-1"></i>Lưu mã</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div th:replace="~{fragments/admin-layout :: confirmModal}"></div>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+<th:block th:replace="~{fragments/admin-layout :: adminScripts}"></th:block>
+</body>
+</html>

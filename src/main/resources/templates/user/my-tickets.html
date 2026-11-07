@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Vé xe của tôi')}"></head>
+<body class="bg-page">
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main class="container py-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-4">
+        <div>
+            <h3 class="fw-bold text-primary-dark mb-1">
+                <i class="bi bi-ticket-perforated-fill text-accent me-2"></i>Vé xe của tôi
+            </h3>
+            <p class="text-muted mb-0">Quản lý lịch sử đặt vé, trạng thái thanh toán và in vé</p>
+        </div>
+        <a th:href="@{/search}" class="btn btn-accent btn-sm px-3">
+            <i class="bi bi-plus-lg me-1"></i>Đặt chuyến xe mới
+        </a>
+    </div>
+
+    <!-- Tabs loc trang thai -->
+    <div class="card p-2 mb-4 shadow-sm">
+        <ul class="nav nav-pills gap-1">
+            <li class="nav-item">
+                <a class="nav-link py-2 px-3 fw-semibold" th:href="@{/my-tickets}"
+                   th:classappend="${statusParam == ''} ? 'active' : ''">Tất cả vé</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link py-2 px-3 fw-semibold" th:href="@{/my-tickets(status='PAID')}"
+                   th:classappend="${statusParam == 'PAID'} ? 'active' : ''">Đã thanh toán</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link py-2 px-3 fw-semibold" th:href="@{/my-tickets(status='PENDING')}"
+                   th:classappend="${statusParam == 'PENDING'} ? 'active' : ''">Chờ thanh toán</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link py-2 px-3 fw-semibold" th:href="@{/my-tickets(status='COMPLETED')}"
+                   th:classappend="${statusParam == 'COMPLETED'} ? 'active' : ''">Đã hoàn thành</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link py-2 px-3 fw-semibold" th:href="@{/my-tickets(status='CANCELLED')}"
+                   th:classappend="${statusParam == 'CANCELLED'} ? 'active text-danger' : ''">Đã hủy</a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Danh sach ve -->
+    <div class="row g-3" th:if="${not page.empty}">
+        <div class="col-12" th:each="t : ${page.content}">
+            <div class="card p-3 p-md-4 card-hover shadow-sm">
+                <div class="row g-3 align-items-center">
+
+                    <!-- Cot 1: Ma ve & Nha xe -->
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="fs-5 fw-bold text-accent font-monospace" th:text="${t.ticketCode}">BG12345678</span>
+                            <span class="badge-soft" th:text="${t.status.label}"
+                                  th:classappend="${t.status.name() == 'PAID'} ? 'badge-soft-success' :
+                                                  (${t.status.name() == 'PENDING'} ? 'badge-soft-warning' :
+                                                  (${t.status.name() == 'COMPLETED'} ? 'badge-soft-primary' : 'badge-soft-danger'))">
+                            </span>
+                        </div>
+                        <div class="fw-semibold text-primary-dark" th:text="${t.trip.bus.company.name}">Hoàng Long</div>
+                        <div class="small text-muted" th:text="${t.trip.bus.busType.label} + ' (' + ${t.trip.bus.licensePlate} + ')'"></div>
+                    </div>
+
+                    <!-- Cot 2: Tuyen duong & Thoi gian -->
+                    <div class="col-md-5">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <strong class="fs-6 text-primary-dark" th:text="${t.trip.origin}">Hà Nội</strong>
+                            <i class="bi bi-arrow-right text-accent"></i>
+                            <strong class="fs-6 text-primary-dark" th:text="${t.trip.destination}">Hải Phòng</strong>
+                        </div>
+                        <div class="small text-muted mb-1">
+                            <i class="bi bi-clock me-1"></i>Khởi hành:
+                            <strong class="text-primary" th:text="${#temporals.format(t.trip.departureTime, 'HH:mm - dd/MM/yyyy')}"></strong>
+                        </div>
+                        <div class="small text-muted">
+                            Ghế:
+                            <span th:each="d : ${t.details}" class="badge bg-light text-dark border me-1"
+                                  th:text="${d.seatCode} + (${d.seatType.name() == 'VIP'} ? ' (VIP)' : '')">A01</span>
+                        </div>
+                    </div>
+
+                    <!-- Cot 3: Gia tien & Thao tac -->
+                    <div class="col-md-4 text-md-end">
+                        <div class="fs-5 fw-bold text-accent mb-2"
+                             th:text="${#numbers.formatDecimal(t.totalAmount, 0, 'POINT', 0, 'COMMA')} + 'đ'">120.000đ</div>
+                        <div class="d-flex justify-content-md-end gap-2">
+                            <a th:href="@{/my-tickets/{id}(id=${t.id})}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-eye me-1"></i>Chi tiết vé
+                            </a>
+                            <a th:href="@{/booking/success(ticketCode=${t.ticketCode})}" class="btn btn-light btn-sm" title="In vé &amp; QR">
+                                <i class="bi bi-printer me-1"></i>In vé
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trạng thái trống -->
+    <div th:if="${page.empty}" class="card p-5 text-center shadow-sm">
+        <div class="mb-3 text-muted display-2">
+            <i class="bi bi-ticket-perforated"></i>
+        </div>
+        <h4 class="fw-bold text-primary-dark mb-2">Chưa có vé xe nào</h4>
+        <p class="text-muted mb-4">Bạn chưa có đơn đặt vé nào ở trạng thái này.</p>
+        <div>
+            <a th:href="@{/search}" class="btn btn-primary-brand">
+                <i class="bi bi-search me-1"></i>Tìm và đặt vé ngay
+            </a>
+        </div>
+    </div>
+
+    <!-- Phan trang -->
+    <nav th:if="${page.totalPages > 1}" class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item" th:classappend="${page.first} ? 'disabled'">
+                <a class="page-link" th:href="@{/my-tickets(page=${page.number - 1}, status=${statusParam})}">&laquo;</a>
+            </li>
+            <li class="page-item" th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+                th:classappend="${i == page.number} ? 'active'">
+                <a class="page-link" th:href="@{/my-tickets(page=${i}, status=${statusParam})}" th:text="${i + 1}">1</a>
+            </li>
+            <li class="page-item" th:classappend="${page.last} ? 'disabled'">
+                <a class="page-link" th:href="@{/my-tickets(page=${page.number + 1}, status=${statusParam})}">&raquo;</a>
+            </li>
+        </ul>
+    </nav>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

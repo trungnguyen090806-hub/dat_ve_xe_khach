@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Tài khoản cá nhân')}"></head>
+<body class="bg-page">
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main class="container py-4">
+    <div class="row g-4">
+
+        <!-- Cot trai: The tai khoan & Hang thanh vien -->
+        <div class="col-lg-4">
+            <!-- The Ho so -->
+            <div class="card p-4 text-center shadow-sm mb-4">
+                <div class="auth-icon mb-3">
+                    <i class="bi bi-person-circle"></i>
+                </div>
+                <h4 class="fw-bold text-primary-dark mb-1" th:text="${user.fullName}">Nguyễn Văn A</h4>
+                <div class="text-muted small mb-2">@<span th:text="${user.username}">username</span></div>
+                <div>
+                    <span class="badge-soft fs-6" th:text="${user.membershipType.label}"
+                          th:classappend="${user.membershipType.name() == 'VIP'} ? 'badge-soft-warning border-warning' :
+                                          (${user.membershipType.name() == 'MEMBER'} ? 'badge-soft-primary' : 'badge-soft-secondary')">
+                    </span>
+                </div>
+            </div>
+
+            <!-- The Hang thanh vien & Tien trinh nang hang -->
+            <div class="card p-4 shadow-sm">
+                <h6 class="fw-bold text-primary-dark mb-3">
+                    <i class="bi bi-award-fill text-warning me-2"></i>Ưu đãi hạng thành viên
+                </h6>
+
+                <div class="small mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Hạng hiện tại:</span>
+                        <strong class="text-primary-dark" th:text="${user.membershipType.label}"></strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Ưu đãi giảm giá vé:</span>
+                        <strong class="text-success" th:text="${#numbers.formatDecimal(user.membershipType.discountRate.multiply(100), 0, 'POINT', 0, 'COMMA')} + '%'"></strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Tổng chi tiêu tích lũy:</span>
+                        <strong class="text-accent" th:text="${#numbers.formatDecimal(spent, 0, 'POINT', 0, 'COMMA')} + 'đ'"></strong>
+                    </div>
+                </div>
+
+                <div class="border-top pt-3">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="text-muted">Tiến trình lên: <strong th:text="${nextRankLabel}"></strong></span>
+                        <span class="fw-bold" th:text="${progressPercent} + '%'"></span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-warning progress-bar-striped progress-bar-animated"
+                             role="progressbar" th:style="'width: ' + ${progressPercent} + '%;'"></div>
+                    </div>
+                    <div class="form-text small mt-2">
+                        * Chi tiêu từ <strong>2.000.000đ</strong> lên Thành viên (giảm 5%), từ <strong>10.000.000đ</strong> lên VIP (giảm 10%).
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cot phai: Tabs thong tin, doi mat khau, lich su thanh toan -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white border-bottom-0 pt-3 px-4">
+                    <ul class="nav nav-tabs card-header-tabs" id="profileTabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active fw-semibold" id="tab-info" data-bs-toggle="tab" data-bs-target="#content-info" type="button">
+                                <i class="bi bi-person me-1"></i>Thông tin cá nhân
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-semibold" id="tab-pass" data-bs-toggle="tab" data-bs-target="#content-pass" type="button">
+                                <i class="bi bi-key me-1"></i>Đổi mật khẩu
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-semibold" id="tab-history" data-bs-toggle="tab" data-bs-target="#content-history" type="button">
+                                <i class="bi bi-clock-history me-1"></i>Lịch sử thanh toán (<span th:text="${#lists.size(payments)}"></span>)
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card-body p-4">
+                    <div class="tab-content" id="profileTabsContent">
+
+                        <!-- Tab 1: Cap nhat thong tin -->
+                        <div class="tab-pane fade show active" id="content-info">
+                            <form th:action="@{/profile/update}" th:object="${profileReq}" method="post">
+                                <div class="mb-3">
+                                    <label class="form-label">Tên đăng nhập (Username)</label>
+                                    <input type="text" class="form-control" th:value="${user.username}" disabled>
+                                    <div class="form-text">Tên đăng nhập không thể thay đổi.</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="profileFullName">Họ và tên *</label>
+                                    <input type="text" id="profileFullName" th:field="*{fullName}" class="form-control" required maxlength="100">
+                                </div>
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label" for="profilePhone">Số điện thoại *</label>
+                                        <input type="tel" id="profilePhone" th:field="*{phone}" class="form-control" required placeholder="0912345678">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label" for="profileEmail">Email *</label>
+                                        <input type="email" id="profileEmail" th:field="*{email}" class="form-control" required placeholder="email@domain.com">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary-brand px-4">
+                                    <i class="bi bi-check2 me-1"></i>Lưu thay đổi
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Tab 2: Doi mat khau -->
+                        <div class="tab-pane fade" id="content-pass">
+                            <form th:action="@{/profile/change-password}" th:object="${passwordReq}" method="post">
+                                <div class="mb-3">
+                                    <label class="form-label" for="currentPassword">Mật khẩu hiện tại *</label>
+                                    <div class="input-group">
+                                        <input type="password" id="currentPassword" th:field="*{currentPassword}" class="form-control" required>
+                                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="currentPassword">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="newPassword">Mật khẩu mới (tối thiểu 6 ký tự) *</label>
+                                    <div class="input-group">
+                                        <input type="password" id="newPassword" th:field="*{newPassword}" class="form-control" required minlength="6">
+                                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="newPassword">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label" for="confirmNewPassword">Xác nhận mật khẩu mới *</label>
+                                    <div class="input-group">
+                                        <input type="password" id="confirmNewPassword" th:field="*{confirmNewPassword}" class="form-control" required minlength="6">
+                                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="confirmNewPassword">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-accent px-4">
+                                    <i class="bi bi-shield-lock me-1"></i>Đổi mật khẩu
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Tab 3: Lich su giao dich thanh toan -->
+                        <div class="tab-pane fade" id="content-history">
+                            <div class="table-responsive" th:if="${not #lists.isEmpty(payments)}">
+                                <table class="table table-hover align-middle">
+                                    <thead class="table-light">
+                                    <tr>
+                                        <th>Mã giao dịch</th>
+                                        <th>Mã vé</th>
+                                        <th>Phương thức</th>
+                                        <th class="text-end">Số tiền</th>
+                                        <th>Thời gian</th>
+                                        <th>Trạng thái</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr th:each="p : ${payments}">
+                                        <td class="fw-semibold font-monospace" th:text="${p.transactionCode}">TXN123456</td>
+                                        <td>
+                                            <a th:href="@{/my-tickets/{id}(id=${p.ticket.id})}" th:text="${p.ticket.ticketCode}">BG123456</a>
+                                        </td>
+                                        <td th:text="${p.method.label}">Chuyển khoản</td>
+                                        <td class="text-end fw-bold text-accent"
+                                            th:text="${#numbers.formatDecimal(p.amount, 0, 'POINT', 0, 'COMMA')} + 'đ'">120.000đ</td>
+                                        <td class="small text-muted" th:text="${#temporals.format(p.createdAt, 'HH:mm - dd/MM/yyyy')}"></td>
+                                        <td>
+                                            <span class="badge-soft" th:text="${p.status.label}"
+                                                  th:classappend="${p.status.name() == 'SUCCESS'} ? 'badge-soft-success' :
+                                                                  (${p.status.name() == 'REFUNDED'} ? 'badge-soft-warning' : 'badge-soft-danger')">
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div th:if="${#lists.isEmpty(payments)}" class="text-center text-muted py-5">
+                                <i class="bi bi-receipt display-4 d-block mb-2"></i>
+                                Bạn chưa có giao dịch thanh toán nào.
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

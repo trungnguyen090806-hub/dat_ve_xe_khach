@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/admin-layout :: adminHead('Quản lý chuyến xe')}"></head>
+<body class="admin-body">
+<div class="admin-wrapper">
+    <aside th:replace="~{fragments/admin-layout :: sidebar('trips')}"></aside>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/admin-layout :: topbar('Quản lý chuyến xe')}"></div>
+
+        <main class="admin-content">
+            <!-- Bo loc -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <form method="get" th:action="@{/admin/trips}" class="row g-2 align-items-end">
+                        <div class="col-md-5">
+                            <label class="form-label">Tìm kiếm</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" name="keyword" th:value="${keyword}" class="form-control"
+                                       placeholder="Mã chuyến, điểm đi, điểm đến, nhà xe...">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Trạng thái</label>
+                            <select name="status" class="form-select">
+                                <option value="">Tất cả</option>
+                                <option th:each="s : ${statuses}" th:value="${s}" th:text="${s.label}"
+                                        th:selected="${s.name() == statusParam}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex gap-2">
+                            <button class="btn btn-primary-brand"><i class="bi bi-funnel me-1"></i>Lọc</button>
+                            <a th:href="@{/admin/trips}" class="btn btn-light">Xóa lọc</a>
+                            <button type="button" class="btn btn-accent ms-auto" data-bs-toggle="modal"
+                                    data-bs-target="#tripModal" data-mode="add">
+                                <i class="bi bi-plus-lg me-1"></i>Thêm chuyến</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Bang -->
+            <div class="card table-card">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                        <tr>
+                            <th>Mã chuyến</th><th>Nhà xe</th><th>Tuyến</th><th>Khởi hành</th>
+                            <th>Loại xe</th><th class="text-end">Giá vé</th><th class="text-center">Ghế</th>
+                            <th>Trạng thái</th><th class="text-end">Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="t : ${page.content}">
+                            <td class="fw-semibold" th:text="${t.tripCode}">HN-HP-001</td>
+                            <td>
+                                <a th:href="@{/admin/companies/{id}(id=${t.companyId})}" th:text="${t.companyName}">Nhà xe</a>
+                                <div class="small text-muted" th:text="${t.licensePlate}">29B-123.45</div>
+                            </td>
+                            <td>
+                                <strong th:text="${t.origin}">Hà Nội</strong>
+                                <i class="bi bi-arrow-right text-accent mx-1"></i>
+                                <strong th:text="${t.destination}">Hải Phòng</strong>
+                            </td>
+                            <td>
+                                <div th:text="${#temporals.format(t.departureTime, 'dd/MM/yyyy')}">01/01/2026</div>
+                                <div class="small text-muted">
+                                    <i class="bi bi-clock"></i> <span th:text="${#temporals.format(t.departureTime, 'HH:mm')}">07:00</span>
+                                    · <span th:text="${t.durationText}">2h30</span></div>
+                            </td>
+                            <td th:text="${t.busTypeLabel}">Giường nằm</td>
+                            <td class="text-end">
+                                <div class="fw-semibold" th:text="${#numbers.formatDecimal(t.basePrice, 0, 'POINT', 0, 'COMMA')} + 'đ'">120.000đ</div>
+                                <div class="small text-muted" th:text="'VIP +' + ${#numbers.formatDecimal(t.vipSurcharge, 0, 'POINT', 0, 'COMMA')} + 'đ'">VIP +30.000đ</div>
+                            </td>
+                            <td class="text-center">
+                                <span th:text="${t.bookedSeats} + '/' + ${t.totalSeats}">2/40</span>
+                                <div class="progress mt-1" style="height:4px">
+                                    <div class="progress-bar bg-success" th:style="'width:' + ${t.totalSeats == 0 ? 0 : t.bookedSeats * 100 / t.totalSeats} + '%'"></div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge-soft" th:text="${t.statusLabel}"
+                                      th:classappend="${t.status == 'SCHEDULED'} ? 'badge-soft-primary' :
+                                                      (${t.status == 'RUNNING'} ? 'badge-soft-warning' :
+                                                      (${t.status == 'COMPLETED'} ? 'badge-soft-success' : 'badge-soft-danger'))">Trạng thái</span>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <button type="button" class="btn btn-sm btn-outline-primary btn-icon" title="Sửa"
+                                        th:if="${t.editable}"
+                                        data-bs-toggle="modal" data-bs-target="#tripModal" data-mode="edit"
+                                        th:data-id="${t.id}" th:data-trip-code="${t.tripCode}" th:data-bus-id="${t.busId}"
+                                        th:data-origin="${t.origin}" th:data-destination="${t.destination}"
+                                        th:data-pickup-point="${t.pickupPoint}" th:data-dropoff-point="${t.dropoffPoint}"
+                                        th:data-departure-time="${#temporals.format(t.departureTime, 'yyyy-MM-dd''T''HH:mm')}"
+                                        th:data-arrival-time="${#temporals.format(t.arrivalTime, 'yyyy-MM-dd''T''HH:mm')}"
+                                        th:data-base-price="${t.basePrice.toPlainString()}"
+                                        th:data-vip-surcharge="${t.vipSurcharge.toPlainString()}"
+                                        th:data-status="${t.status}">
+                                    <i class="bi bi-pencil"></i></button>
+                                <button type="button" class="btn btn-sm btn-outline-warning btn-icon" title="Hủy chuyến"
+                                        th:if="${t.editable}"
+                                        data-bs-toggle="modal" data-bs-target="#confirmModal"
+                                        th:data-confirm-action="@{/admin/trips/{id}/cancel(id=${t.id})}"
+                                        data-confirm-title="Hủy chuyến xe"
+                                        th:data-confirm-message="'Hủy chuyến ' + ${t.tripCode} + '? Các vé đã đặt sẽ bị hủy và hoàn tiền.'"
+                                        data-confirm-button="Hủy chuyến" data-confirm-class="btn-warning">
+                                    <i class="bi bi-slash-circle"></i></button>
+                                <button type="button" class="btn btn-sm btn-outline-danger btn-icon" title="Xóa"
+                                        data-bs-toggle="modal" data-bs-target="#confirmModal"
+                                        th:data-confirm-action="@{/admin/trips/{id}/delete(id=${t.id})}"
+                                        data-confirm-title="Xóa chuyến xe"
+                                        th:data-confirm-message="'Xóa vĩnh viễn chuyến ' + ${t.tripCode} + '? (Chỉ xóa được chuyến chưa có vé)'"
+                                        data-confirm-button="Xóa" data-confirm-class="btn-danger">
+                                    <i class="bi bi-trash"></i></button>
+                            </td>
+                        </tr>
+                        <tr th:if="${page.empty}">
+                            <td colspan="9" class="text-center text-muted py-5">
+                                <i class="bi bi-inbox fs-1 d-block"></i>Không có chuyến xe nào.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-white d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+                    <small class="text-muted">Tổng <strong th:text="${page.totalElements}">0</strong> chuyến</small>
+                    <div th:replace="~{fragments/admin-layout :: pagination(${page}, '/admin/trips', ${keyword}, ${statusParam})}"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Modal them / sua chuyen -->
+<div class="modal fade" id="tripModal" tabindex="-1" data-crud-modal data-add-title="Thêm chuyến xe" data-edit-title="Sửa chuyến xe">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <form class="modal-content" method="post" th:action="@{/admin/trips/save}">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm chuyến xe</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" name="id">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Mã chuyến</label>
+                        <input type="text" name="tripCode" class="form-control" maxlength="20" placeholder="Để trống = tự sinh">
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Xe (nhà xe) *</label>
+                        <select name="busId" class="form-select" required>
+                            <option value="">-- Chọn xe --</option>
+                            <option th:each="b : ${buses}" th:value="${b.id}" th:text="${b.displayName}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Điểm đi *</label>
+                        <input type="text" name="origin" class="form-control" required maxlength="100" placeholder="Hà Nội">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Điểm đến *</label>
+                        <input type="text" name="destination" class="form-control" required maxlength="100" placeholder="Hải Phòng">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Điểm đón</label>
+                        <input type="text" name="pickupPoint" class="form-control" maxlength="255" placeholder="Bến xe Gia Lâm">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Điểm trả</label>
+                        <input type="text" name="dropoffPoint" class="form-control" maxlength="255" placeholder="Bến xe Niệm Nghĩa">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Ngày giờ khởi hành *</label>
+                        <input type="datetime-local" name="departureTime" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Ngày giờ đến dự kiến *</label>
+                        <input type="datetime-local" name="arrivalTime" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Giá vé (đ) *</label>
+                        <input type="number" name="basePrice" class="form-control" required min="1000" step="1000" placeholder="120000">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Phụ phí ghế VIP (đ) *</label>
+                        <input type="number" name="vipSurcharge" class="form-control" required min="0" step="1000" value="30000">
+                    </div>
+                    <div class="col-md-4" data-edit-only>
+                        <label class="form-label">Trạng thái</label>
+                        <select name="status" class="form-select">
+                            <option value="SCHEDULED">Sắp khởi hành</option>
+                            <option value="RUNNING">Đang chạy</option>
+                            <option value="COMPLETED">Hoàn thành</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-text mt-3"><i class="bi bi-info-circle"></i>
+                    Tổng số ghế và loại xe lấy theo xe được chọn. Muốn hủy chuyến hãy dùng nút “Hủy chuyến”.</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
+                <button type="submit" class="btn btn-primary-brand"><i class="bi bi-check2 me-1"></i>Lưu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div th:replace="~{fragments/admin-layout :: confirmModal}"></div>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+<th:block th:replace="~{fragments/admin-layout :: adminScripts}"></th:block>
+</body>
+</html>

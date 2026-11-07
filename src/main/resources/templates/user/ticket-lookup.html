@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Tra cứu vé xe')}"></head>
+<body class="bg-page">
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+
+            <!-- Card Form tra cuu -->
+            <div class="card p-4 p-md-5 shadow-sm mb-4">
+                <div class="text-center mb-4">
+                    <div class="auth-icon"><i class="bi bi-search"></i></div>
+                    <h3 class="fw-bold text-primary-dark mb-1">Tra cứu vé xe trực tuyến</h3>
+                    <p class="text-muted mb-0">Nhập mã vé và số điện thoại đã dùng để đặt vé</p>
+                </div>
+
+                <div class="alert alert-danger" th:if="${lookupError}">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i><span th:text="${lookupError}"></span>
+                </div>
+
+                <form th:action="@{/lookup}" th:object="${lookupRequest}" method="post" novalidate>
+                    <div class="mb-3">
+                        <label class="form-label" for="lookupTicketCode">Mã vé xe *</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-ticket-perforated"></i></span>
+                            <input type="text" id="lookupTicketCode" th:field="*{ticketCode}" class="form-control"
+                                   th:errorclass="is-invalid" placeholder="Ví dụ: BG250001" required autofocus>
+                        </div>
+                        <div class="invalid-feedback d-block" th:errors="*{ticketCode}"></div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label" for="lookupPhone">Số điện thoại đặt vé *</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                            <input type="tel" id="lookupPhone" th:field="*{phone}" class="form-control"
+                                   th:errorclass="is-invalid" placeholder="Ví dụ: 0912345678" required>
+                        </div>
+                        <div class="invalid-feedback d-block" th:errors="*{phone}"></div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary-brand w-100 py-2 fs-6">
+                        <i class="bi bi-search me-1"></i>Tra cứu thông tin vé
+                    </button>
+                </form>
+            </div>
+
+            <!-- Ket qua tra cuu (neu tim thay) -->
+            <div th:if="${found}" class="card p-4 p-md-5 shadow-lg border-primary">
+                <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-3">
+                    <div>
+                        <div class="small text-muted">Mã vé tra cứu</div>
+                        <h4 class="fw-bold text-accent font-monospace mb-0" th:text="${ticket.ticketCode}">BG250001</h4>
+                    </div>
+                    <span class="badge-soft fs-6" th:text="${ticket.status.label}"
+                          th:classappend="${ticket.status.name() == 'PAID'} ? 'badge-soft-success' :
+                                          (${ticket.status.name() == 'PENDING'} ? 'badge-soft-warning' :
+                                          (${ticket.status.name() == 'COMPLETED'} ? 'badge-soft-primary' : 'badge-soft-danger'))">
+                    </span>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="small text-muted">Hành khách:</div>
+                        <strong th:text="${ticket.passengerName}">Nguyễn Văn A</strong>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="small text-muted">Số điện thoại:</div>
+                        <strong th:text="${ticket.passengerPhone}">0912345678</strong>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="small text-muted">Tuyến đường:</div>
+                        <strong><span th:text="${trip.origin}"></span> <i class="bi bi-arrow-right text-accent"></i> <span th:text="${trip.destination}"></span></strong>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="small text-muted">Khởi hành:</div>
+                        <strong class="text-primary" th:text="${#temporals.format(trip.departureTime, 'HH:mm - dd/MM/yyyy')}"></strong>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="small text-muted">Nhà xe:</div>
+                        <strong th:text="${trip.bus.company.name}">Hoàng Long</strong>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="small text-muted">Ghế ngồi:</div>
+                        <span th:each="d : ${ticket.details}" class="badge bg-primary me-1" th:text="${d.seatCode}"></span>
+                    </div>
+                </div>
+
+                <div class="p-3 bg-light rounded-3 d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <div class="small text-muted">Tổng thanh toán:</div>
+                        <span class="fs-4 fw-bold text-accent" th:text="${#numbers.formatDecimal(ticket.totalAmount, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                    </div>
+                    <img th:if="${qrCode}" th:src="'data:image/png;base64,' + ${qrCode}" alt="QR code"
+                         class="img-fluid rounded border bg-white p-1" style="max-width: 90px;">
+                </div>
+
+                <div class="text-center">
+                    <a th:href="@{/booking/success(ticketCode=${ticket.ticketCode})}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-printer me-1"></i>Xem trang in vé xe
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

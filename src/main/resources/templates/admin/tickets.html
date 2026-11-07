@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/admin-layout :: adminHead('Quản lý vé xe')}"></head>
+<body class="admin-body">
+<div class="admin-wrapper">
+    <aside th:replace="~{fragments/admin-layout :: sidebar('tickets')}"></aside>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/admin-layout :: topbar('Quản lý Vé xe')}"></div>
+
+        <main class="admin-content">
+            <!-- Bo loc -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <form method="get" th:action="@{/admin/tickets}" class="row g-2 align-items-end">
+                        <div class="col-md-5">
+                            <label class="form-label">Tìm kiếm</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" name="keyword" th:value="${keyword}" class="form-control"
+                                       placeholder="Mã vé, tên hành khách, số điện thoại...">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Trạng thái vé</label>
+                            <select name="status" class="form-select">
+                                <option value="">Tất cả trạng thái</option>
+                                <option th:each="s : ${statuses}" th:value="${s}" th:text="${s.label}"
+                                        th:selected="${s.name() == statusParam}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex gap-2">
+                            <button class="btn btn-primary-brand"><i class="bi bi-funnel me-1"></i>Lọc</button>
+                            <a th:href="@{/admin/tickets}" class="btn btn-light">Xóa lọc</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Bang ve -->
+            <div class="card table-card">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                        <tr>
+                            <th>Mã vé</th>
+                            <th>Hành khách</th>
+                            <th>Chuyến xe</th>
+                            <th>Khởi hành</th>
+                            <th>Ghế</th>
+                            <th class="text-end">Tổng tiền</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="t : ${page.content}">
+                            <td>
+                                <a th:href="@{/admin/tickets/{id}(id=${t.id})}" class="fw-bold font-monospace text-accent"
+                                   th:text="${t.ticketCode}">BG12345678</a>
+                                <div class="small text-muted" th:text="${#temporals.format(t.createdAt, 'dd/MM/yyyy HH:mm')}"></div>
+                            </td>
+                            <td>
+                                <strong th:text="${t.passengerName}">Hành khách</strong>
+                                <div class="small text-muted" th:text="${t.passengerPhone}">0900000000</div>
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-primary-dark" th:text="${t.trip.origin} + ' → ' + ${t.trip.destination}"></div>
+                                <div class="small text-muted" th:text="${t.trip.bus.company.name}"></div>
+                            </td>
+                            <td class="small" th:text="${#temporals.format(t.trip.departureTime, 'HH:mm - dd/MM/yyyy')}"></td>
+                            <td>
+                                <span th:each="d : ${t.details}" class="badge bg-light text-dark border me-1"
+                                      th:text="${d.seatCode}"></span>
+                            </td>
+                            <td class="text-end fw-bold text-accent"
+                                th:text="${#numbers.formatDecimal(t.totalAmount, 0, 'POINT', 0, 'COMMA')} + 'đ'">120.000đ</td>
+                            <td>
+                                <span class="badge-soft" th:text="${t.status.label}"
+                                      th:classappend="${t.status.name() == 'PAID'} ? 'badge-soft-success' :
+                                                      (${t.status.name() == 'PENDING'} ? 'badge-soft-warning' :
+                                                      (${t.status.name() == 'COMPLETED'} ? 'badge-soft-primary' : 'badge-soft-danger'))">
+                                </span>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a th:href="@{/admin/tickets/{id}(id=${t.id})}" class="btn btn-sm btn-outline-secondary btn-icon" title="Xem chi tiết">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+
+                                <!-- Xac nhan thanh toan (neu PENDING) -->
+                                <button th:if="${t.status.name() == 'PENDING'}" type="button"
+                                        class="btn btn-sm btn-outline-success btn-icon" title="Xác nhận thanh toán"
+                                        data-bs-toggle="modal" data-bs-target="#confirmModal"
+                                        th:data-confirm-action="@{/admin/tickets/{id}/confirm-payment(id=${t.id})}"
+                                        data-confirm-title="Xác nhận thanh toán"
+                                        th:data-confirm-message="'Xác nhận đã nhận thanh toán cho vé ' + ${t.ticketCode} + '?'"
+                                        data-confirm-button="Xác nhận" data-confirm-class="btn-success">
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
+
+                                <!-- Huy ve -->
+                                <button th:if="${t.status.name() == 'PAID' or t.status.name() == 'PENDING'}" type="button"
+                                        class="btn btn-sm btn-outline-danger btn-icon" title="Hủy vé"
+                                        data-bs-toggle="modal" data-bs-target="#confirmModal"
+                                        th:data-confirm-action="@{/admin/tickets/{id}/cancel(id=${t.id})}"
+                                        data-confirm-title="Hủy vé xe"
+                                        th:data-confirm-message="'Bạn có chắc muốn HỦY vé ' + ${t.ticketCode} + '? Ghế sẽ được giải phóng ngay lập tức.'"
+                                        data-confirm-button="Hủy vé" data-confirm-class="btn-danger">
+                                    <i class="bi bi-slash-circle"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr th:if="${page.empty}">
+                            <td colspan="8" class="text-center text-muted py-5">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>Không tìm thấy vé nào.
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card-footer bg-white d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+                    <small class="text-muted">Tổng <strong th:text="${page.totalElements}">0</strong> vé</small>
+                    <div th:replace="~{fragments/admin-layout :: pagination(${page}, '/admin/tickets', ${keyword}, ${statusParam})}"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<div th:replace="~{fragments/admin-layout :: confirmModal}"></div>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+<th:block th:replace="~{fragments/admin-layout :: adminScripts}"></th:block>
+</body>
+</html>

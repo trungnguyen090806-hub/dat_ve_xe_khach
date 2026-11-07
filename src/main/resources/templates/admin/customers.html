@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/admin-layout :: adminHead('Quản lý khách hàng')}"></head>
+<body class="admin-body">
+<div class="admin-wrapper">
+    <aside th:replace="~{fragments/admin-layout :: sidebar('customers')}"></aside>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/admin-layout :: topbar('Quản lý Khách hàng')}"></div>
+
+        <main class="admin-content">
+            <!-- Bo loc -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <form method="get" th:action="@{/admin/customers}" class="row g-2 align-items-end">
+                        <div class="col-md-5">
+                            <label class="form-label">Tìm kiếm</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" name="keyword" th:value="${keyword}" class="form-control"
+                                       placeholder="Họ tên, username, email, số điện thoại...">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Hạng thành viên</label>
+                            <select name="membership" class="form-select">
+                                <option value="">Tất cả hạng</option>
+                                <option th:each="m : ${membershipTypes}" th:value="${m}" th:text="${m.label}"
+                                        th:selected="${m.name() == membershipParam}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex gap-2">
+                            <button class="btn btn-primary-brand"><i class="bi bi-funnel me-1"></i>Lọc</button>
+                            <a th:href="@{/admin/customers}" class="btn btn-light">Xóa lọc</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Bang danh sach khach hang -->
+            <div class="card table-card">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                        <tr>
+                            <th>Họ và tên</th>
+                            <th>Tài khoản</th>
+                            <th>Liên hệ</th>
+                            <th>Hạng thành viên</th>
+                            <th class="text-end">Tổng chi tiêu</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="u : ${page.content}">
+                            <td>
+                                <strong class="text-primary-dark" th:text="${u.fullName}">Nguyễn Văn An</strong>
+                                <div class="small text-muted" th:text="'Ngày tạo: ' + ${#temporals.format(u.createdAt, 'dd/MM/yyyy')}"></div>
+                            </td>
+                            <td class="font-monospace" th:text="${u.username}">customer</td>
+                            <td>
+                                <div><i class="bi bi-telephone me-1 text-primary"></i><span th:text="${u.phone}">0900000002</span></div>
+                                <div class="small text-muted"><i class="bi bi-envelope me-1"></i><span th:text="${u.email}"></span></div>
+                            </td>
+                            <td>
+                                <span class="badge-soft" th:text="${u.membershipType.label}"
+                                      th:classappend="${u.membershipType.name() == 'VIP'} ? 'badge-soft-warning border-warning' :
+                                                      (${u.membershipType.name() == 'MEMBER'} ? 'badge-soft-primary' : 'badge-soft-secondary')">
+                                </span>
+                            </td>
+                            <td class="text-end fw-semibold text-accent"
+                                th:text="${#numbers.formatDecimal(u.totalSpent, 0, 'POINT', 0, 'COMMA')} + 'đ'">0đ</td>
+                            <td>
+                                <span th:if="${u.enabled}" class="badge bg-success">Hoạt động</span>
+                                <span th:unless="${u.enabled}" class="badge bg-danger">Bị khóa</span>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <!-- Nut doi hang -->
+                                <button type="button" class="btn btn-sm btn-outline-primary btn-icon" title="Cập nhật hạng"
+                                        data-bs-toggle="modal" th:data-bs-target="'#rankModal_' + ${u.id}">
+                                    <i class="bi bi-award"></i>
+                                </button>
+
+                                <!-- Nut khoa / mo khoa -->
+                                <button type="button" class="btn btn-sm btn-icon"
+                                        th:classappend="${u.enabled} ? 'btn-outline-danger' : 'btn-outline-success'"
+                                        th:title="${u.enabled} ? 'Khóa tài khoản' : 'Mở khóa tài khoản'"
+                                        data-bs-toggle="modal" data-bs-target="#confirmModal"
+                                        th:data-confirm-action="@{/admin/customers/{id}/toggle-status(id=${u.id})}"
+                                        th:data-confirm-title="${u.enabled} ? 'Khóa tài khoản' : 'Mở khóa tài khoản'"
+                                        th:data-confirm-message="'Bạn có chắc muốn ' + (${u.enabled} ? 'KHÓA' : 'MỞ KHÓA') + ' tài khoản ' + ${u.username} + '?'"
+                                        th:data-confirm-button="${u.enabled} ? 'Khóa' : 'Mở khóa'"
+                                        th:data-confirm-class="${u.enabled} ? 'btn-danger' : 'btn-success'">
+                                    <i class="bi" th:classappend="${u.enabled} ? 'bi-lock-fill' : 'bi-unlock-fill'"></i>
+                                </button>
+
+                                <!-- Modal cap nhat hang thanh vien -->
+                                <div class="modal fade text-start" th:id="'rankModal_' + ${u.id}" tabindex="-1">
+                                    <div class="modal-dialog modal-dialog-centered modal-sm">
+                                        <form class="modal-content" method="post" th:action="@{/admin/customers/{id}/update-membership(id=${u.id})}">
+                                            <div class="modal-header">
+                                                <h6 class="modal-title">Cập nhật hạng thành viên</h6>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <label class="form-label">Chọn hạng:</label>
+                                                <select name="membershipType" class="form-select">
+                                                    <option th:each="m : ${membershipTypes}" th:value="${m}" th:text="${m.label}"
+                                                            th:selected="${m == u.membershipType}"></option>
+                                                </select>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Đóng</button>
+                                                <button type="submit" class="btn btn-primary-brand btn-sm">Lưu</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${page.empty}">
+                            <td colspan="7" class="text-center text-muted py-5">
+                                <i class="bi bi-people fs-1 d-block mb-2"></i>Không tìm thấy người dùng nào.
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card-footer bg-white d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+                    <small class="text-muted">Tổng <strong th:text="${page.totalElements}">0</strong> tài khoản</small>
+                    <div th:replace="~{fragments/admin-layout :: pagination(${page}, '/admin/customers', ${keyword}, ${membershipParam})}"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<div th:replace="~{fragments/admin-layout :: confirmModal}"></div>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+<th:block th:replace="~{fragments/admin-layout :: adminScripts}"></th:block>
+</body>
+</html>

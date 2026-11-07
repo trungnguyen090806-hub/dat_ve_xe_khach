@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Thông báo')}"></head>
+<body class="bg-page">
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container text-center py-5">
+    <div class="display-3 text-accent"><i class="bi bi-exclamation-octagon"></i></div>
+    <h3 class="text-primary-dark">Không thể thực hiện thao tác</h3>
+    <p class="text-muted" th:text="${message}">Có lỗi nghiệp vụ.</p>
+    <a href="javascript:history.back()" class="btn btn-outline-primary me-2">Quay lại</a>
+    <a th:href="@{/}" class="btn btn-primary-brand">Về trang chủ</a>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/admin-layout :: adminHead('Quản lý sơ đồ ghế')}"></head>
+<body class="admin-body">
+<div class="admin-wrapper">
+    <aside th:replace="~{fragments/admin-layout :: sidebar('seats')}"></aside>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/admin-layout :: topbar('Quản lý Sơ đồ Ghế theo Chuyến')}"></div>
+
+        <main class="admin-content">
+            <!-- Chon chuyen xe -->
+            <div class="card p-3 mb-4 shadow-sm">
+                <form method="get" th:action="@{/admin/seats}" class="row g-2 align-items-center">
+                    <div class="col-md-8">
+                        <label class="form-label fw-bold">Chọn chuyến xe để xem sơ đồ trạng thái ghế:</label>
+                        <select name="tripId" class="form-select" onchange="this.form.submit()">
+                            <option th:each="t : ${trips}" th:value="${t.id}"
+                                    th:selected="${t.id == selectedTripId}"
+                                    th:text="${t.tripCode} + ' | ' + ${t.origin} + ' → ' + ${t.destination} + ' (' + ${#temporals.format(t.departureTime, 'HH:mm dd/MM/yyyy')} + ')'">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 text-md-end mt-md-4">
+                        <span class="badge-soft badge-soft-primary fs-6" th:if="${trip != null}" th:text="${trip.companyName} + ' - ' + ${trip.busTypeLabel} + ' (' + ${trip.licensePlate} + ')'"></span>
+                    </div>
+                </form>
+            </div>
+
+            <!-- So do ghe -->
+            <div th:if="${seatMap != null}" class="card p-4 shadow-sm">
+                <!-- Legend -->
+                <div class="d-flex flex-wrap gap-4 p-3 bg-light rounded-3 mb-4 justify-content-center">
+                    <div class="seat-legend-item">
+                        <div class="seat-legend-box seat-legend-available"></div>
+                        <span>Ghế trống (<strong th:text="${seatMap.trip.availableSeats}"></strong>)</span>
+                    </div>
+                    <div class="seat-legend-item">
+                        <div class="seat-legend-box seat-legend-selected"></div>
+                        <span>Đang giữ tạm</span>
+                    </div>
+                    <div class="seat-legend-item">
+                        <div class="seat-legend-box seat-legend-booked"></div>
+                        <span>Đã bán (<strong th:text="${seatMap.trip.bookedSeats}"></strong>)</span>
+                    </div>
+                    <div class="seat-legend-item">
+                        <i class="bi bi-gem text-warning fs-5"></i>
+                        <span>Ghế VIP</span>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <!-- TANG 1 -->
+                    <div class="col-md-6">
+                        <div class="bus-floor-card">
+                            <div class="bus-front-indicator">
+                                <span><i class="bi bi-door-open me-1"></i>Cửa lên</span>
+                                <span class="badge bg-primary px-3">TẦNG 1</span>
+                                <span><i class="bi bi-life-preserver me-1"></i>Tài xế</span>
+                            </div>
+                            <div class="seat-grid">
+                                <div th:each="s : ${seatMap.floor1Seats}"
+                                     class="seat-btn"
+                                     th:classappend="${s.status == 'BOOKED'} ? 'seat-booked' :
+                                                     (${s.status == 'HELD_BY_OTHER' or s.status == 'HELD_BY_ME'} ? 'seat-held-me' :
+                                                     ('seat-available' + (${s.seatType == 'VIP'} ? ' seat-vip' : '')))"
+                                     th:title="${s.seatCode} + ' - ' + ${s.statusLabel}">
+                                    <span th:if="${s.seatType == 'VIP'}" class="seat-type-icon text-warning"><i class="bi bi-gem"></i></span>
+                                    <span th:text="${s.seatCode}"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TANG 2 -->
+                    <div class="col-md-6" th:if="${seatMap.totalFloors >= 2}">
+                        <div class="bus-floor-card">
+                            <div class="bus-front-indicator">
+                                <span><i class="bi bi-arrow-up-right me-1"></i>Cầu thang</span>
+                                <span class="badge bg-secondary px-3">TẦNG 2</span>
+                                <span><i class="bi bi-wind me-1"></i>Kính chắn</span>
+                            </div>
+                            <div class="seat-grid">
+                                <div th:each="s : ${seatMap.floor2Seats}"
+                                     class="seat-btn"
+                                     th:classappend="${s.status == 'BOOKED'} ? 'seat-booked' :
+                                                     (${s.status == 'HELD_BY_OTHER' or s.status == 'HELD_BY_ME'} ? 'seat-held-me' :
+                                                     ('seat-available' + (${s.seatType == 'VIP'} ? ' seat-vip' : '')))"
+                                     th:title="${s.seatCode} + ' - ' + ${s.statusLabel}">
+                                    <span th:if="${s.seatType == 'VIP'}" class="seat-type-icon text-warning"><i class="bi bi-gem"></i></span>
+                                    <span th:text="${s.seatCode}"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${trips.empty}" class="card p-5 text-center text-muted">
+                Chưa có chuyến xe nào để xem sơ đồ.
+            </div>
+        </main>
+    </div>
+</div>
+
+<th:block th:replace="~{fragments/admin-layout :: adminScripts}"></th:block>
+</body>
+</html>

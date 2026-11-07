@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Xác nhận đặt vé & Thanh toán')}"></head>
+<body class="bg-page">
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<!-- Quy trinh cac buoc -->
+<div class="bg-white py-3 border-bottom shadow-sm">
+    <div class="container">
+        <div class="d-flex justify-content-center align-items-center gap-3 gap-md-5 small fw-bold">
+            <span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>1. Chọn chuyến &amp; ghế</span>
+            <i class="bi bi-chevron-right text-muted"></i>
+            <span class="text-primary"><i class="bi bi-credit-card-2-front-fill me-1"></i>2. Xác nhận &amp; Thanh toán</span>
+            <i class="bi bi-chevron-right text-muted"></i>
+            <span class="text-muted"><i class="bi bi-check-circle me-1"></i>3. Hoàn tất đặt vé</span>
+        </div>
+    </div>
+</div>
+
+<main class="container py-4">
+    <form th:action="@{/booking/checkout}" th:object="${form}" method="post" id="checkoutForm">
+        <input type="hidden" th:field="*{tripId}">
+        <input type="hidden" th:field="*{seatIds}">
+        <input type="hidden" th:field="*{promoCode}">
+
+        <div class="row g-4">
+
+            <!-- ================= COT TRAI: THONG TIN & THANH TOAN ================= -->
+            <div class="col-lg-7">
+
+                <!-- 1. Thong tin hanh khach -->
+                <div class="card p-4 mb-4 shadow-sm">
+                    <h5 class="fw-bold text-primary-dark mb-3 pb-2 border-bottom">
+                        <i class="bi bi-person-lines-fill text-primary me-2"></i>Thông tin hành khách
+                    </h5>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Họ và tên hành khách *</label>
+                            <input type="text" th:field="*{passengerName}" class="form-control"
+                                   th:errorclass="is-invalid" required placeholder="Nguyễn Văn A">
+                            <div class="invalid-feedback" th:errors="*{passengerName}"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Số điện thoại nhận vé *</label>
+                            <input type="tel" th:field="*{passengerPhone}" class="form-control"
+                                   th:errorclass="is-invalid" required placeholder="0912345678">
+                            <div class="invalid-feedback" th:errors="*{passengerPhone}"></div>
+                            <div class="form-text">Mã vé và thông báo sẽ được gửi qua số này.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" th:field="*{passengerEmail}" class="form-control"
+                                   th:errorclass="is-invalid" placeholder="email@domain.com">
+                            <div class="invalid-feedback" th:errors="*{passengerEmail}"></div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Ghi chú cho nhà xe (nếu có)</label>
+                            <input type="text" th:field="*{note}" class="form-control"
+                                   placeholder="Ví dụ: Đón ở ngã tư, hành lý nhiều...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Phuong thuc thanh toan -->
+                <div class="card p-4 mb-4 shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <h5 class="fw-bold text-primary-dark mb-0">
+                            <i class="bi bi-wallet2 text-primary me-2"></i>Phương thức thanh toán
+                        </h5>
+                        <span class="badge-soft badge-soft-warning">
+                            <i class="bi bi-info-circle-fill"></i> Môi trường DEMO
+                        </span>
+                    </div>
+
+                    <div class="alert alert-info small mb-3">
+                        <i class="bi bi-shield-check me-1"></i>
+                        Hệ thống hoạt động ở chế độ <strong>Giả lập thanh toán Demo</strong>. Mọi giao dịch được phê duyệt tự động ngay lập tức để thuận tiện kiểm thử đồ án.
+                    </div>
+
+                    <div class="d-flex flex-column gap-3">
+                        <!-- Option 1: Chuyen khoan ngan hang -->
+                        <label class="p-3 border rounded-3 d-flex align-items-start gap-3 cursor-pointer bg-light">
+                            <input type="radio" class="form-check-input mt-1" th:field="*{paymentMethod}" value="BANK_TRANSFER">
+                            <div class="flex-grow-1">
+                                <div class="fw-bold text-primary-dark">
+                                    <i class="bi bi-bank text-primary me-1"></i>Chuyển khoản Ngân hàng (QR Code)
+                                </div>
+                                <small class="text-muted d-block">Quét mã VietQR hoặc chuyển khoản Internet Banking nhanh 24/7.</small>
+                                <div class="mt-2 p-2 bg-white rounded border small">
+                                    <div>Ngân hàng: <strong>MBBank (Ngân hàng Quân Đội)</strong></div>
+                                    <div>Số tài khoản: <strong>999988889999</strong> (BUSGO DEMO)</div>
+                                    <div>Nội dung CK: <strong>DATVE [Mã chuyến]</strong></div>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Option 2: Vi dien tu -->
+                        <label class="p-3 border rounded-3 d-flex align-items-start gap-3 cursor-pointer">
+                            <input type="radio" class="form-check-input mt-1" th:field="*{paymentMethod}" value="E_WALLET">
+                            <div class="flex-grow-1">
+                                <div class="fw-bold text-primary-dark">
+                                    <i class="bi bi-phone text-accent me-1"></i>Ví điện tử (MoMo / VNPAY)
+                                </div>
+                                <small class="text-muted d-block">Thanh toán tức thì qua ứng dụng ví điện tử liên kết.</small>
+                            </div>
+                        </label>
+
+                        <!-- Option 3: Tien mat -->
+                        <label class="p-3 border rounded-3 d-flex align-items-start gap-3 cursor-pointer">
+                            <input type="radio" class="form-check-input mt-1" th:field="*{paymentMethod}" value="CASH">
+                            <div class="flex-grow-1">
+                                <div class="fw-bold text-primary-dark">
+                                    <i class="bi bi-cash-stack text-success me-1"></i>Thanh toán tiền mặt khi lên xe
+                                </div>
+                                <small class="text-muted d-block">Thanh toán trực tiếp cho phụ xe / tài xế khi khởi hành.</small>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 3. Ma khuyen mai -->
+                <div class="card p-4 shadow-sm">
+                    <h6 class="fw-bold text-primary-dark mb-2">
+                        <i class="bi bi-ticket-perforated text-accent me-1"></i>Mã giảm giá / Khuyến mãi
+                    </h6>
+                    <div class="input-group">
+                        <input type="text" id="promoInput" class="form-control" placeholder="Nhập mã (VD: WELCOME10, SUMMER50K)"
+                               th:value="${view.promoCode}">
+                        <button type="button" class="btn btn-outline-primary" id="btnApplyPromo">Áp dụng</button>
+                    </div>
+                    <div th:if="${view.promoMessage}" class="small mt-2"
+                         th:classappend="${view.promoDiscount > 0} ? 'text-success fw-bold' : 'text-danger'"
+                         th:text="${view.promoMessage}"></div>
+                    <div class="form-text mt-1">Mã dùng thử: <strong class="text-primary">WELCOME10</strong> (giảm 10%), <strong class="text-primary">SUMMER50K</strong> (giảm 50.000đ).</div>
+                </div>
+
+            </div>
+
+            <!-- ================= COT PHAI: TOM TAT & TINH TIEN ================= -->
+            <div class="col-lg-5">
+                <div class="summary-card">
+                    <h5 class="fw-bold text-primary-dark mb-3 pb-2 border-bottom">
+                        <i class="bi bi-receipt-cutoff text-primary me-2"></i>Chi tiết vé xe
+                    </h5>
+
+                    <!-- Thong tin nha xe & tuyen -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="fw-bold text-primary-dark mb-0" th:text="${trip.companyName}">Hoàng Long</h6>
+                                <span class="badge-soft badge-soft-primary" th:text="${trip.busTypeLabel}">Giường nằm</span>
+                                <span class="small text-muted" th:text="'(' + ${trip.licensePlate} + ')'"></span>
+                            </div>
+                            <span class="badge bg-primary" th:text="${trip.tripCode}">HN-HP-001</span>
+                        </div>
+
+                        <div class="p-3 bg-light rounded-3 mt-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div>
+                                    <strong class="fs-6" th:text="${#temporals.format(trip.departureTime, 'HH:mm')}">07:00</strong>
+                                    <div class="small text-muted" th:text="${trip.pickupPoint ?: trip.origin}">Hà Nội</div>
+                                </div>
+                                <div class="text-center px-2">
+                                    <small class="text-muted" th:text="${trip.durationText}">2h30</small>
+                                    <i class="bi bi-arrow-right text-accent d-block"></i>
+                                </div>
+                                <div class="text-end">
+                                    <strong class="fs-6" th:text="${#temporals.format(trip.arrivalTime, 'HH:mm')}">09:30</strong>
+                                    <div class="small text-muted" th:text="${trip.dropoffPoint ?: trip.destination}">Hải Phòng</div>
+                                </div>
+                            </div>
+                            <div class="small text-muted text-center pt-2 border-top mt-2">
+                                <i class="bi bi-calendar-event me-1"></i>Khởi hành: <strong th:text="${#temporals.format(trip.departureTime, 'dd/MM/yyyy')}"></strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Danh sach ghe da chon -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold text-primary-dark">Danh sách ghế (<span th:text="${#lists.size(seats)}"></span>):</span>
+                            <a th:href="@{/trips/{id}/seats(id=${trip.id})}" class="small text-primary text-decoration-none">
+                                <i class="bi bi-pencil-square me-1"></i>Chọn lại ghế
+                            </a>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <span th:each="s : ${seats}" class="selected-seat-tag">
+                                <span th:text="${s.seatCode}">A01</span>
+                                <span th:if="${s.seatType == 'VIP'}" class="badge bg-warning text-dark px-1 py-0" style="font-size:0.68rem;">VIP</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Bang tinh tien -->
+                    <div class="small mb-3">
+                        <div class="d-flex justify-content-between py-1">
+                            <span class="text-muted">Giá vé gốc (<span th:text="${#lists.size(seats)}">1</span> vé):</span>
+                            <span class="fw-semibold" th:text="${#numbers.formatDecimal(view.subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'">120.000đ</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between py-1" th:if="${view.vipSurchargeTotal > 0}">
+                            <span class="text-muted">Phụ phí ghế VIP:</span>
+                            <span class="fw-semibold text-warning" th:text="'+' + ${#numbers.formatDecimal(view.vipSurchargeTotal, 0, 'POINT', 0, 'COMMA')} + 'đ'">+30.000đ</span>
+                        </div>
+
+                        <!-- Giam gia thanh vien -->
+                        <div class="d-flex justify-content-between py-1" th:if="${view.memberDiscount > 0}">
+                            <span class="text-muted">
+                                <i class="bi bi-award-fill text-warning me-1"></i>Ưu đãi hạng <strong th:text="${view.membershipType.label}">MEMBER</strong>:
+                            </span>
+                            <span class="fw-semibold text-success" th:text="'-' + ${#numbers.formatDecimal(view.memberDiscount, 0, 'POINT', 0, 'COMMA')} + 'đ'">-15.000đ</span>
+                        </div>
+
+                        <!-- Khuyen mai -->
+                        <div class="d-flex justify-content-between py-1" th:if="${view.promoDiscount > 0}">
+                            <span class="text-muted">
+                                <i class="bi bi-tag-fill text-danger me-1"></i>Mã giảm giá (<span th:text="${view.promoCode}"></span>):
+                            </span>
+                            <span class="fw-semibold text-success" th:text="'-' + ${#numbers.formatDecimal(view.promoDiscount, 0, 'POINT', 0, 'COMMA')} + 'đ'">-10.000đ</span>
+                        </div>
+
+                        <!-- Tong cong -->
+                        <div class="d-flex justify-content-between py-2 border-top mt-2 align-items-center">
+                            <span class="fw-bold text-primary-dark fs-5">Tổng thanh toán:</span>
+                            <span class="fw-bold text-accent fs-4" th:text="${#numbers.formatDecimal(view.totalAmount, 0, 'POINT', 0, 'COMMA')} + 'đ'">135.000đ</span>
+                        </div>
+                    </div>
+
+                    <!-- Nut Xac nhan dat ve -->
+                    <button type="submit" class="btn btn-accent w-100 py-2 fs-6 shadow">
+                        <i class="bi bi-shield-check me-1"></i>Xác nhận &amp; Thanh toán
+                    </button>
+
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            Bằng cách bấm thanh toán, bạn đồng ý với <a href="#">Điều khoản sử dụng</a> và <a href="#">Chính sách hoàn hủy vé</a> của BusGo.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </form>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+
+<script th:inline="javascript">
+/*<![CDATA[*/
+    document.getElementById('btnApplyPromo').addEventListener('click', () => {
+        const promo = document.getElementById('promoInput').value.trim();
+        const tripId = /*[[${trip.id}]]*/ 0;
+        const seatIds = /*[[${form.seatIds}]]*/ [];
+        let url = `/booking/checkout?tripId=${tripId}&promoCode=${encodeURIComponent(promo)}`;
+        seatIds.forEach(id => url += `&seatIds=${id}`);
+        window.location.href = url;
+    });
+/*]]>*/
+</script>
+</body>
+</html>
