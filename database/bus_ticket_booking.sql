@@ -293,11 +293,16 @@ INSERT INTO roles (name, description) VALUES
 
 -- password = "password"
 SET @pw = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
+-- password = "thanhtrung"
+SET @pw_trung = '$2a$10$tczB9e3P1TRs9CJWDAlwxubDlj5BPfYUlAQmdwLsUi4k9BixIwzzC';
+-- password = "kieuanh"
+SET @pw_kieuanh = '$2a$10$pDFmcrNzRZJUK1s.I/tK0eIpRSeJyxpLjxMKFIkNSswmEIaSMQ5Lu';
+
 INSERT INTO users (full_name, username, email, phone, password, membership_type, total_spent) VALUES
- ('Quản trị viên', 'admin',     'admin@busgo.vn',    '0900000001', @pw, 'VIP',     0),
- ('Nguyễn Văn An', 'customer',  'customer@busgo.vn', '0900000002', @pw, 'REGULAR', 0),
- ('Trần Thị Bình', 'binhtran',  'binh@busgo.vn',     '0900000003', @pw, 'MEMBER',  3500000),
- ('Lê Minh Cường', 'cuongle',   'cuong@busgo.vn',    '0900000004', @pw, 'VIP',     12000000);
+ ('Quản trị viên', 'admin',      'admin@busgo.vn',      '0900000001', @pw,          'VIP',     0),
+ ('Nguyễn Văn An', 'customer',   'customer@busgo.vn',   '0900000002', @pw,          'REGULAR', 0),
+ ('Thành Trung',   'thanhtrung', 'thanhtrung@busgo.vn', '0900000003', @pw_trung,    'MEMBER',  3500000),
+ ('Kiều Anh',      'kieuanh',    'kieuanh@busgo.vn',    '0900000004', @pw_kieuanh,  'VIP',     12000000);
 INSERT INTO user_roles VALUES (1,1),(2,2),(3,2),(4,2);
 
 INSERT INTO bus_companies (name, hotline, email, address, description, rating_avg, rating_count) VALUES
@@ -348,10 +353,10 @@ INSERT INTO bus_trips (trip_code, bus_id, origin, destination, pickup_point, dro
 
 -- Ve mau. Ve 1: trip 1 (A01 VIP + A05) - khach 3 (MEMBER giam 5%) - da thanh toan
 INSERT INTO tickets (ticket_code,user_id,trip_id,passenger_name,passenger_phone,passenger_email,subtotal,vip_surcharge_total,member_discount,promo_discount,total_amount,status) VALUES
- ('BG250001',3,1,'Trần Thị Bình','0900000003','binh@busgo.vn',240000,30000,13500,0,256500,'PAID'),
- ('BG250002',4,1,'Lê Minh Cường','0900000004','cuong@busgo.vn',120000,30000,15000,0,135000,'PAID'),   -- VIP giam 10%
+ ('BG250001',3,1,'Thành Trung','0900000003','thanhtrung@busgo.vn',240000,30000,13500,0,256500,'PAID'),
+ ('BG250002',4,1,'Kiều Anh','0900000004','kieuanh@busgo.vn',120000,30000,15000,0,135000,'PAID'),   -- VIP giam 10%
  ('BG250003',2,2,'Nguyễn Văn An','0900000002','customer@busgo.vn',110000,0,0,0,110000,'PENDING'),
- ('BG250004',3,9,'Trần Thị Bình','0900000003','binh@busgo.vn',240000,30000,13500,0,256500,'COMPLETED'),
+ ('BG250004',3,9,'Thành Trung','0900000003','thanhtrung@busgo.vn',240000,30000,13500,0,256500,'COMPLETED'),
  ('BG250005',2,10,'Nguyễn Văn An','0900000002','customer@busgo.vn',220000,0,0,0,220000,'COMPLETED'),
  ('BG250006',2,3,'Nguyễn Văn An','0900000002','customer@busgo.vn',180000,0,0,0,180000,'CANCELLED');
 UPDATE tickets SET cancel_reason='Khách đổi lịch', cancelled_at=NOW() WHERE ticket_code='BG250006';

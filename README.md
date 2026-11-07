@@ -116,8 +116,8 @@ Tất cả các tài khoản mặc định sử dụng mật khẩu: `password`
 | :---: | :--- | :--- | :---: | :---: | :---: | :--- |
 | 1 | `admin` | `admin@busgo.vn` | `password` | `ROLE_ADMIN` | - | Toàn quyền quản trị hệ thống, báo cáo, quản lý chuyến & vé |
 | 2 | `customer` | `customer@busgo.vn` | `password` | `ROLE_CUSTOMER` | `REGULAR` | Khách hàng mới (Giảm giá 0%) |
-| 3 | `binhtran` | `binh@busgo.vn` | `password` | `ROLE_CUSTOMER` | `MEMBER` | Khách hàng thân thiết (Tự động giảm 5% mọi chuyến) |
-| 4 | `cuongle` | `cuong@busgo.vn` | `password` | `ROLE_CUSTOMER` | `VIP` | Khách hàng VIP (Tự động giảm 10% mọi chuyến) |
+| 3 | `thanhtrung` | `thanhtrung@busgo.vn` | `thanhtrung` | `ROLE_CUSTOMER` | `MEMBER` | Khách hàng thân thiết (Tự động giảm 5% mọi chuyến) |
+| 4 | `kieuanh` | `kieuanh@busgo.vn` | `kieuanh` | `ROLE_CUSTOMER` | `VIP` | Khách hàng VIP (Tự động giảm 10% mọi chuyến) |
 
 ---
 
